@@ -259,6 +259,7 @@ export interface AppSettings {
   supabaseAnonKey: string;
   supabaseServiceKey?: string;
   geminiApiKey: string;
+  geminiApiKey2?: string;
   useEdgeFunction: boolean;
   edgeFunctionUrl: string;
   enableClientCache: boolean;

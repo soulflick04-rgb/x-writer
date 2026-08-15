@@ -160,26 +160,55 @@ export const initialOpportunities: TopicOpportunity[] = [
 export const storage = {
   getSettings(): AppSettings {
     const rawEnv = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.GEMINI_API_KEY || '';
+    const rawEnv2 = (import.meta as any).env?.VITE_GEMINI_API_KEY_2 || (import.meta as any).env?.GEMINI_API_KEY_2 || '';
     const envKey = String(rawEnv).trim().replace(/^["']|["']$/g, '');
+    const envKey2 = String(rawEnv2).trim().replace(/^["']|["']$/g, '');
+    
     const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (!raw) return { ...defaultSettings, geminiApiKey: envKey };
+    if (!raw) return { ...defaultSettings, geminiApiKey: envKey, geminiApiKey2: envKey2 };
     try {
       const parsed = JSON.parse(raw);
       const storedKey = String(parsed.geminiApiKey || '').trim().replace(/^["']|["']$/g, '');
+      const storedKey2 = String(parsed.geminiApiKey2 || '').trim().replace(/^["']|["']$/g, '');
       return { 
         ...defaultSettings, 
         ...parsed, 
-        geminiApiKey: storedKey || envKey || '' 
+        geminiApiKey: storedKey || envKey || '',
+        geminiApiKey2: storedKey2 || envKey2 || ''
       };
     } catch {
-      return { ...defaultSettings, geminiApiKey: envKey };
+      return { ...defaultSettings, geminiApiKey: envKey, geminiApiKey2: envKey2 };
     }
+  },
+
+  getAllGeminiKeys(): string[] {
+    const s = this.getSettings();
+    const keys: string[] = [];
+    
+    // Process Key 1 (supports comma separated)
+    if (s.geminiApiKey) {
+      s.geminiApiKey.split(',').forEach(k => {
+        const clean = k.trim().replace(/^["']|["']$/g, '');
+        if (clean && !keys.includes(clean)) keys.push(clean);
+      });
+    }
+
+    // Process Key 2
+    if (s.geminiApiKey2) {
+      s.geminiApiKey2.split(',').forEach(k => {
+        const clean = k.trim().replace(/^["']|["']$/g, '');
+        if (clean && !keys.includes(clean)) keys.push(clean);
+      });
+    }
+
+    return keys;
   },
 
   saveSettings(settings: AppSettings): void {
     const sanitized = {
       ...settings,
-      geminiApiKey: String(settings.geminiApiKey || '').trim().replace(/^["']|["']$/g, '')
+      geminiApiKey: String(settings.geminiApiKey || '').trim().replace(/^["']|["']$/g, ''),
+      geminiApiKey2: String(settings.geminiApiKey2 || '').trim().replace(/^["']|["']$/g, '')
     };
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(sanitized));
   },

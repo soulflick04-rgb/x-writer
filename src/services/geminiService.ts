@@ -297,6 +297,9 @@ RESPOND STRICTLY WITH A JSON OBJECT MATCHING THIS EXACT SCHEMA (inside \`\`\`jso
       }
     };
 
+    const allKeys = storage.getAllGeminiKeys();
+    const keysToTry = allKeys.length > 0 ? allKeys : [apiKey];
+
     const modelsToTry = [
       'gemini-2.5-flash',
       'gemini-3.5-flash',
@@ -307,46 +310,54 @@ RESPOND STRICTLY WITH A JSON OBJECT MATCHING THIS EXACT SCHEMA (inside \`\`\`jso
     let lastError: any = null;
     let geminiData: any = null;
 
-    for (let i = 0; i < modelsToTry.length; i++) {
-      const model = modelsToTry[i];
-      const modelEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    keyLoop: for (let k = 0; k < keysToTry.length; k++) {
+      const activeKey = keysToTry[k];
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 90000);
+      for (let i = 0; i < modelsToTry.length; i++) {
+        const model = modelsToTry[i];
+        const modelEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 90000);
 
-      try {
-        if (i > 0) {
-          onProgressUpdate?.(`Quota busy, switching to ${model}...`, 60);
-          await new Promise(r => setTimeout(r, 2000));
-        }
+        try {
+          if (k > 0 || i > 0) {
+            onProgressUpdate?.(k > 0 ? `Switching to Backup API Key ${k + 1}...` : `Switching to ${model}...`, 60);
+            await new Promise(r => setTimeout(r, 1000));
+          }
 
-        const res = await fetch(modelEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
+          const res = await fetch(modelEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
 
-        if (res.ok) {
-          geminiData = await res.json();
-          break; // Success!
-        }
+          if (res.ok) {
+            geminiData = await res.json();
+            break keyLoop; // Success!
+          }
 
-        if (res.status === 429) {
-          lastError = new Error('Quota Limit Exceeded (HTTP 429): Your Gemini API key reached its Google AI Studio rate limit. Please wait 60 seconds or paste another free key in Settings.');
-          continue; // Try next model fallback
-        }
+          if (res.status === 429) {
+            lastError = new Error('Quota Limit Exceeded (HTTP 429): Your Gemini API key reached its Google AI Studio rate limit. Please wait 60 seconds or paste another free key in Settings.');
+            if (k < keysToTry.length - 1) {
+              onProgressUpdate?.(`Key ${k + 1} rate-limited, failover to Key ${k + 2}...`, 55);
+              break; // Try next key in pool
+            }
+            continue; // Try next model fallback
+          }
 
-        const errData = await res.json().catch(() => ({}));
-        const errMessage = errData.error?.message || `HTTP ${res.status}`;
-        lastError = new Error(`Gemini API Error (${res.status}): ${errMessage}`);
-      } catch (netErr: any) {
-        clearTimeout(timeoutId);
-        if (netErr.name === 'AbortError') {
-          lastError = new Error('Grounded search request timed out after 90 seconds. Please try again.');
-        } else {
-          lastError = new Error(`Network error connecting to Gemini: ${netErr.message}`);
+          const errData = await res.json().catch(() => ({}));
+          const errMessage = errData.error?.message || `HTTP ${res.status}`;
+          lastError = new Error(`Gemini API Error (${res.status}): ${errMessage}`);
+        } catch (netErr: any) {
+          clearTimeout(timeoutId);
+          if (netErr.name === 'AbortError') {
+            lastError = new Error('Grounded search request timed out after 90 seconds. Please try again.');
+          } else {
+            lastError = new Error(`Network error connecting to Gemini: ${netErr.message}`);
+          }
         }
       }
     }

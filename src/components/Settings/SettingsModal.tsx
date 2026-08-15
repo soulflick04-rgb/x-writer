@@ -228,25 +228,42 @@ CREATE POLICY "Users can access own post_metrics" ON public.post_metrics FOR ALL
             </div>
           </div>
 
-          {/* Gemini Grounding API Key */}
+          {/* Gemini Grounding Multi-API Key Pool */}
           <div className="space-y-3 bg-cinema-950 p-4 rounded-xl border border-cinema-800">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-white uppercase text-[11px] font-mono text-gold-400 flex items-center gap-1.5">
                 <Key className="w-3.5 h-3.5" />
-                Gemini API Key (Google Search Grounding)
+                Gemini API Keys Pool (Multi-Key Failover)
               </h3>
-              <span className="text-[10px] font-mono text-emerald-400">Strictly 1-Req Pipeline</span>
+              <span className="text-[10px] font-mono text-emerald-400">Auto Rate-Limit Failover</span>
             </div>
             
-            <input
-              type="password"
-              value={form.geminiApiKey}
-              onChange={(e) => setForm({ ...form, geminiApiKey: e.target.value })}
-              placeholder="AIzaSy..."
-              className="w-full bg-cinema-900 border border-cinema-750 rounded-lg p-2 text-white font-mono text-xs"
-            />
+            <div className="space-y-2">
+              <div>
+                <label className="text-[11px] text-cinema-400 block mb-1">Primary Gemini Key (Google AI Studio)</label>
+                <input
+                  type="password"
+                  value={form.geminiApiKey || ''}
+                  onChange={(e) => setForm({ ...form, geminiApiKey: e.target.value })}
+                  placeholder="AQ.Ab8RN6... or AIzaSy..."
+                  className="w-full bg-cinema-900 border border-cinema-750 rounded-lg p-2 text-white font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] text-cinema-400 block mb-1">Backup / Secondary Gemini Key (Optional Failover)</label>
+                <input
+                  type="password"
+                  value={form.geminiApiKey2 || ''}
+                  onChange={(e) => setForm({ ...form, geminiApiKey2: e.target.value })}
+                  placeholder="AQ.Ab8RN6... (Switches automatically if Primary hits rate limit)"
+                  className="w-full bg-cinema-900 border border-cinema-750 rounded-lg p-2 text-white font-mono text-xs"
+                />
+              </div>
+            </div>
+
             <p className="text-[11px] text-cinema-400">
-              Used to query Gemini 2.0 with Google Search Grounding. For production Supabase Edge Functions, set this in Supabase Secrets as <code className="text-gold-400">GEMINI_API_KEY</code>.
+              Supports both <code className="text-gold-400">AQ...</code> and <code className="text-gold-400">AIzaSy...</code> keys. Soulflick AI automatically rotates across your keys if one ever hits a temporary rate limit.
             </p>
           </div>
 

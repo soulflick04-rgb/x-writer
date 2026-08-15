@@ -18,11 +18,21 @@ export default defineConfig(({ mode }) => {
     ''
   ).trim().replace(/^["']|["']$/g, '');
 
+  const resolvedGeminiKey2 = (
+    env.VITE_GEMINI_API_KEY_2 ||
+    env.GEMINI_API_KEY_2 ||
+    env.GOOGLE_API_KEY_2 ||
+    process.env.VITE_GEMINI_API_KEY_2 ||
+    process.env.GEMINI_API_KEY_2 ||
+    ''
+  ).trim().replace(/^["']|["']$/g, '');
+
   return {
     plugins: [react(), tailwindcss()],
     define: {
       'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(resolvedGeminiKey),
       'import.meta.env.GEMINI_API_KEY': JSON.stringify(resolvedGeminiKey),
+      'import.meta.env.VITE_GEMINI_API_KEY_2': JSON.stringify(resolvedGeminiKey2),
     },
   };
 });
