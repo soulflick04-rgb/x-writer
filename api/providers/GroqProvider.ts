@@ -23,7 +23,7 @@ export class GroqProvider implements AIProvider {
     const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     try {
-      const systemInstruction = `${req.systemPrompt}\n\nIMPORTANT PROVIDER CONSTRAINT: You are operating as the Groq fallback provider without native live web search. Do not fabricate unverifiable real-time events, but use your comprehensive film craft and historical/recent knowledge to fulfill the structured JSON cinema analysis. Output strictly valid JSON.`;
+      const systemInstruction = `${req.systemPrompt}\n\nCRITICAL OUTPUT REQUIREMENT: You MUST return strictly valid JSON matching the schema with a "drafts" object containing 4 full, rich post drafts:\n- "primary": Full complete viral cinephile post text\n- "smart": Full complete technical craft & directing mechanics post text\n- "spicy": Full complete defensible contrarian take\n- "emotional": Full complete creative devotion & human lore story\n\nEach draft must be a rich, fully written post (never summary bullets or placeholders).`;
 
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -40,7 +40,7 @@ export class GroqProvider implements AIProvider {
             },
             {
               role: 'user',
-              content: `TASK:\n${req.userPrompt}\n\nExecute cinema analysis now in strictly valid JSON format.`
+              content: `TASK:\n${req.userPrompt}\n\nGenerate all 4 complete draft personas in the JSON schema now.`
             }
           ],
           temperature: 0.7,

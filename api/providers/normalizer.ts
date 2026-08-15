@@ -121,9 +121,10 @@ export function normalizeProviderOutput(
             verified: true
           }
         ],
-    drafts: sanitizeDraftVariants(
-      parsed.drafts || {},
-      parsed.recommended_topic?.title || parsed.title || 'Cinema Topic',
+    drafts: extractAndSanitizeDrafts(
+      parsed,
+      response.rawText,
+      parsed.recommended_topic?.title || parsed.title || 'Cinema Analysis',
       parsed.recommended_topic?.summary || parsed.summary || 'Film craft analysis',
       parsed.angle_analysis || {}
     ),
@@ -152,29 +153,68 @@ export function normalizeProviderOutput(
   };
 }
 
-function sanitizeDraftVariants(
-  rawDrafts: any,
+function extractDraftString(input: any): string {
+  if (!input) return '';
+  if (typeof input === 'string' && input.trim().length > 15) {
+    return input.trim();
+  }
+  if (typeof input === 'object' && input !== null) {
+    for (const key of ['draft', 'content', 'text', 'post', 'body', 'take', 'tweet']) {
+      if (typeof input[key] === 'string' && input[key].trim().length > 15) {
+        return input[key].trim();
+      }
+    }
+  }
+  return '';
+}
+
+function extractAndSanitizeDrafts(
+  parsed: any,
+  _rawText: string | undefined,
   topicTitle: string,
   summary: string,
   angleAnalysis: any
 ): { primary: string; smart: string; spicy: string; emotional: string } {
-  let primary = typeof rawDrafts?.primary === 'string' && rawDrafts.primary.trim()
-    ? rawDrafts.primary.trim()
-    : `${topicTitle}\n\n${summary}`;
+  let primary = '';
+  let smart = '';
+  let spicy = '';
+  let emotional = '';
 
-  let smart = typeof rawDrafts?.smart === 'string' && rawDrafts.smart.trim()
-    ? rawDrafts.smart.trim()
-    : '';
+  // 1. Check parsed.drafts object
+  if (parsed?.drafts && typeof parsed.drafts === 'object' && !Array.isArray(parsed.drafts)) {
+    primary = extractDraftString(parsed.drafts.primary || parsed.drafts.viral || parsed.drafts.take_1);
+    smart = extractDraftString(parsed.drafts.smart || parsed.drafts.craft || parsed.drafts.take_2);
+    spicy = extractDraftString(parsed.drafts.spicy || parsed.drafts.contrarian || parsed.drafts.take_3);
+    emotional = extractDraftString(parsed.drafts.emotional || parsed.drafts.story || parsed.drafts.take_4);
+  }
 
-  let spicy = typeof rawDrafts?.spicy === 'string' && rawDrafts.spicy.trim()
-    ? rawDrafts.spicy.trim()
-    : '';
+  // 2. Check top-level keys
+  if (!primary) primary = extractDraftString(parsed?.primary || parsed?.viral || parsed?.take_1);
+  if (!smart) smart = extractDraftString(parsed?.smart || parsed?.craft || parsed?.take_2);
+  if (!spicy) spicy = extractDraftString(parsed?.spicy || parsed?.contrarian || parsed?.take_3);
+  if (!emotional) emotional = extractDraftString(parsed?.emotional || parsed?.story || parsed?.take_4);
 
-  let emotional = typeof rawDrafts?.emotional === 'string' && rawDrafts.emotional.trim()
-    ? rawDrafts.emotional.trim()
-    : '';
+  // 3. Check drafts array
+  if (Array.isArray(parsed?.drafts) && parsed.drafts.length > 0) {
+    if (!primary && parsed.drafts[0]) primary = extractDraftString(parsed.drafts[0]);
+    if (!smart && parsed.drafts[1]) smart = extractDraftString(parsed.drafts[1]);
+    if (!spicy && parsed.drafts[2]) spicy = extractDraftString(parsed.drafts[2]);
+    if (!emotional && parsed.drafts[3]) emotional = extractDraftString(parsed.drafts[3]);
+  }
 
-  // Prevent duplicate text across drafts
+  // 4. Check posts/variants array
+  if (Array.isArray(parsed?.posts) && parsed.posts.length > 0) {
+    if (!primary && parsed.posts[0]) primary = extractDraftString(parsed.posts[0]);
+    if (!smart && parsed.posts[1]) smart = extractDraftString(parsed.posts[1]);
+    if (!spicy && parsed.posts[2]) spicy = extractDraftString(parsed.posts[2]);
+    if (!emotional && parsed.posts[3]) emotional = extractDraftString(parsed.posts[3]);
+  }
+
+  // Fallback generation only if absolutely empty
+  if (!primary) {
+    primary = `${topicTitle}\n\n${summary}`;
+  }
+
   if (!smart || smart === primary) {
     const craftAngle = angleAnalysis?.hidden_detail || angleAnalysis?.industry || 'optical choices, lighting contrast, and editing rhythm';
     smart = `Look closely at the directorial craft behind ${topicTitle}.\n\nThe decisions surrounding ${craftAngle} redefine how the sequence breathes on screen.\n\nIt's a masterclass in visual storytelling and intentional film construction.`;
@@ -216,14 +256,14 @@ function parseRawModelOutput(raw: string, _selectedLength?: string): any {
 
   try {
     const parsed = JSON.parse(clean);
-    if (parsed.drafts || parsed.recommended_topic) {
+    if (parsed && typeof parsed === 'object') {
       return parsed;
     }
   } catch {
     try {
       const withoutTrailing = clean.replace(/,\s*([\}\]])/g, '$1');
       const parsed = JSON.parse(withoutTrailing);
-      if (parsed.drafts || parsed.recommended_topic) {
+      if (parsed && typeof parsed === 'object') {
         return parsed;
       }
     } catch {}
@@ -264,13 +304,14 @@ function parseRawModelOutput(raw: string, _selectedLength?: string): any {
       why_now: whyNow,
       opportunity_score: 92
     },
-    drafts: sanitizeDraftVariants(
+    drafts: extractAndSanitizeDrafts(
       {
         primary: primaryDraft,
         smart: smartDraft,
         spicy: spicyDraft,
         emotional: emotionalDraft
       },
+      undefined,
       title,
       summary,
       {}

@@ -10,8 +10,8 @@ export class ProviderRouter {
   constructor() {
     this.providers = [
       new GeminiProvider(),
-      new OpenRouterProvider(),
-      new GroqProvider()
+      new GroqProvider(),
+      new OpenRouterProvider()
     ];
   }
 
