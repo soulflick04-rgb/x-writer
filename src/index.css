@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #FAF7F2;
+    --sidebar-bg: #F4EFE6;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --border-subtle: rgba(218, 207, 192, 0.6);
+    --border-hover: rgba(184, 168, 149, 0.8);
+    --text-primary: #24201C;
+    --text-secondary: #746B60;
+    --text-muted: #9E9487;
+    --accent-gold: #C29358;
+    --accent-dark: #2B2520;
+    --btn-text: #FDFBF8;
+  }
+
+  .dark {
+    --bg-main: #131211;
+    --sidebar-bg: #1A1816;
+    --card-bg: rgba(28, 25, 23, 0.85);
+    --border-subtle: rgba(68, 62, 56, 0.6);
+    --border-hover: rgba(120, 110, 98, 0.8);
+    --text-primary: #F5EFEB;
+    --text-secondary: #B3A89C;
+    --text-muted: #7E7469;
+    --accent-gold: #D4A373;
+    --accent-dark: #F5EFEB;
+    --btn-text: #1C1917;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: 'Newsreader', 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Warm Atmospheric Misty Mountain Background Overlay */
+.cinema-mist-bg {
+  background: 
+    radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255, 255, 255, 0.7) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 60% at 80% 90%, rgba(228, 206, 178, 0.45) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 20% 85%, rgba(214, 194, 170, 0.4) 0%, transparent 60%),
+    linear-gradient(180deg, #FAF7F2 0%, #F5EFE6 45%, #EBE2D3 80%, #E2D5C3 100%);
+  background-attachment: fixed;
+}
+
+.dark .cinema-mist-bg {
+  background: 
+    radial-gradient(ellipse 100% 80% at 50% 0%, rgba(45, 40, 35, 0.5) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 60% at 80% 90%, rgba(35, 30, 25, 0.6) 0%, transparent 60%),
+    linear-gradient(180deg, #131211 0%, #171513 45%, #1C1A18 80%, #201D1A 100%);
+  background-attachment: fixed;
+}
+
+/* Master Button Warm Shadow */
+.shadow-master-btn {
+  box-shadow: 0 12px 32px -4px rgba(43, 37, 32, 0.38), 0 4px 12px -2px rgba(43, 37, 32, 0.2);
+}
+
+.shadow-pill-card {
+  box-shadow: 0 2px 10px -2px rgba(50, 42, 35, 0.05), 0 1px 3px 0 rgba(50, 42, 35, 0.03);
+}
+
+.shadow-editorial-card {
+  box-shadow: 0 10px 30px -5px rgba(50, 42, 35, 0.08), 0 2px 8px -2px rgba(50, 42, 35, 0.04);
+}
+
+/* Custom Minimal Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(180, 165, 145, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(180, 165, 145, 0.7);
+}
+
+/* Subtle animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
