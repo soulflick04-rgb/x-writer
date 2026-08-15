@@ -107,7 +107,23 @@ export function App() {
     setLoadingMode('create');
     setErrorMessage(null);
     setProgressPercent(15);
-    setProgressStage('Scanning current cinema trades & Reddit discussions...');
+    setProgressStage('Scanning breaking cinema trades & discussions...');
+
+    // Smooth stage progress ticker
+    const stages = [
+      { msg: 'Scanning breaking cinema trades & discussions...', pct: 25 },
+      { msg: 'Grounding facts & verifying box office/craft claims...', pct: 50 },
+      { msg: 'Synthesizing 4 persona writing variations...', pct: 75 },
+      { msg: 'Composing visual prompt & search keywords...', pct: 90 },
+    ];
+    let step = 0;
+    const ticker = setInterval(() => {
+      if (step < stages.length) {
+        setProgressStage(stages[step].msg);
+        setProgressPercent(stages[step].pct);
+        step++;
+      }
+    }, 2200);
 
     try {
       const result = await geminiService.researchAndCreate(
@@ -128,6 +144,10 @@ export function App() {
           setProgressPercent(progress);
         }
       );
+
+      clearInterval(ticker);
+      setProgressPercent(100);
+      setProgressStage('Research & Persona Synthesis Complete!');
 
       setActiveResult(result);
 
@@ -176,9 +196,11 @@ export function App() {
       });
       showToast('Grounded Research & 4 Persona Drafts Synthesized!');
     } catch (err: any) {
+      clearInterval(ticker);
       console.error('Research and create error:', err);
       setErrorMessage(err.message || 'Grounded research failed. Check API key in settings.');
     } finally {
+      clearInterval(ticker);
       setIsLoading(false);
       setLoadingMode(null);
     }

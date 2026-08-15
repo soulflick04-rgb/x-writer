@@ -108,12 +108,15 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
     let lastError: any = null;
     let finalResult: any = null;
 
-    // 1. PRIMARY: Gemini with Google Search Grounding
+    // 1. PRIMARY: Gemini with Google Search Grounding (Optimized to 2048 tokens & 14s timeout)
     if (geminiKeys.length > 0 && attempts < maxAttempts) {
       for (const gKey of geminiKeys) {
         if (attempts >= maxAttempts) break;
         attempts++;
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 14000);
+
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${gKey}`;
           const res = await fetch(endpoint, {
             method: 'POST',
@@ -121,9 +124,11 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
             body: JSON.stringify({
               contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nExecute research for: ${params.contentType || 'Cinema story'}.` }] }],
               tools: [{ googleSearch: {} }],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 8192 }
-            })
+              generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+            }),
+            signal: controller.signal
           });
+          clearTimeout(timeoutId);
 
           if (res.ok) {
             const data: any = await res.json();
@@ -143,10 +148,13 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
       }
     }
 
-    // 2. FALLBACK 1: Groq API (Llama 3.3 70B)
+    // 2. FALLBACK 1: Groq API (Ultra-fast Llama 3.3 70B ~ 1.2s)
     if (!finalResult && groqKey && attempts < maxAttempts) {
       attempts++;
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -157,12 +165,14 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
             model: 'llama-3.3-70b-versatile',
             messages: [
               { role: 'system', content: 'You are Soulflick AI. Output strictly valid JSON matching the requested cinema research schema.' },
-              { role: 'user', content: `${systemPrompt}\n\nExecute cinema analysis now.` }
+              { role: 'user', content: `${systemPrompt}\n\nExecute cinema analysis now in JSON format.` }
             ],
             temperature: 0.7,
             response_format: { type: 'json_object' }
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (res.ok) {
           const data: any = await res.json();
@@ -180,10 +190,13 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
       }
     }
 
-    // 3. FINAL FALLBACK: OpenRouter
+    // 3. FINAL FALLBACK: OpenRouter (Gemini 2.5 Flash Lite)
     if (!finalResult && openRouterKey && attempts < maxAttempts) {
       attempts++;
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -196,8 +209,10 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
               { role: 'user', content: `${systemPrompt}\n\nExecute research now.` }
             ],
             temperature: 0.7
-          })
+          }),
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (res.ok) {
           const data: any = await res.json();
