@@ -194,7 +194,7 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
                 Opportunity Score: {result.recommended_topic.opportunity_score || 92}/100
               </span>
               {result.provider_metadata ? (
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full flex items-center gap-1 font-semibold ${
+                <span className={`text-[10px] font-mono px-2.5 py-0.5 rounded-full flex items-center gap-1.5 font-semibold ${
                   result.provider_metadata.live_web_grounding
                     ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
                     : 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20'
@@ -202,8 +202,8 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
                   <Globe2 className="w-3 h-3" />
                   <span>
                     {result.provider_metadata.provider === 'gemini' 
-                      ? 'Gemini (Google Search Grounded)' 
-                      : `${result.provider_metadata.provider.toUpperCase()} (Fallback Synthesis)`}
+                      ? `Gemini (${result.provider_metadata.model_used || '2.5-flash'} • Google Search Grounded)` 
+                      : `${result.provider_metadata.provider.toUpperCase()} (${result.provider_metadata.model_used || 'fallback'} • ${result.provider_metadata.live_web_grounding ? 'Live Web Grounded' : 'Fallback Synthesis'})`}
                   </span>
                 </span>
               ) : result.provider_used && (
@@ -260,20 +260,27 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
-                <span className="text-[10px] text-[#9E9080] block">Provider Used</span>
+                <span className="text-[10px] text-[#9E9080] block">Provider</span>
                 <span className="text-xs font-bold text-white uppercase">
                   {result.provider_metadata?.provider || result.provider_used || 'Gemini'}
                 </span>
               </div>
 
               <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
-                <span className="text-[10px] text-[#9E9080] block">Live Web Grounding</span>
+                <span className="text-[10px] text-[#9E9080] block">Model Running</span>
+                <span className="text-xs font-bold text-[#D4A373] truncate block" title={result.provider_metadata?.model_used || 'gemini-2.5-flash'}>
+                  {result.provider_metadata?.model_used || 'gemini-2.5-flash'}
+                </span>
+              </div>
+
+              <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
+                <span className="text-[10px] text-[#9E9080] block">Live Search</span>
                 <span className={`text-xs font-bold ${
                   result.provider_metadata?.live_web_grounding ? 'text-emerald-400' : 'text-amber-400'
                 }`}>
-                  {result.provider_metadata?.live_web_grounding ? 'YES (Live Search)' : 'NO (Fallback)'}
+                  {result.provider_metadata?.live_web_grounding ? 'YES (Active)' : 'NO (Offline)'}
                 </span>
               </div>
 
@@ -285,7 +292,7 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
               </div>
 
               <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
-                <span className="text-[10px] text-[#9E9080] block">Response Latency</span>
+                <span className="text-[10px] text-[#9E9080] block">Latency</span>
                 <span className="text-xs font-bold text-[#D4A373]">
                   {result.provider_metadata?.execution_time_ms || result.execution_time_ms || 0} ms
                 </span>

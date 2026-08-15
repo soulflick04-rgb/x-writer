@@ -109,6 +109,7 @@ export class GeminiProvider implements AIProvider {
             return {
               rawText,
               provider: 'gemini',
+              modelUsed: model,
               liveWebGrounding,
               searchQueries,
               sources,

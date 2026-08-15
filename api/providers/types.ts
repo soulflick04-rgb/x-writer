@@ -18,6 +18,7 @@ export interface GroundedSourceItem {
 export interface ProviderResponse {
   rawText: string;
   provider: 'gemini' | 'groq' | 'openrouter';
+  modelUsed: string;
   liveWebGrounding: boolean;
   searchQueries: string[];
   sources: GroundedSourceItem[];
@@ -33,6 +34,7 @@ export interface AIProvider {
 
 export interface ProviderMetadata {
   provider: 'gemini' | 'groq' | 'openrouter';
+  model_used: string;
   fallback_used: boolean;
   provider_chain: string[];
   live_web_grounding: boolean;

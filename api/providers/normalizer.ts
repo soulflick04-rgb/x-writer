@@ -58,6 +58,7 @@ export function normalizeProviderOutput(
 
   const metadata: ProviderMetadata = {
     provider: response.provider,
+    model_used: response.modelUsed || response.provider,
     fallback_used: isFallbackUsed,
     provider_chain: providerChain,
     live_web_grounding: response.liveWebGrounding,

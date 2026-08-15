@@ -66,6 +66,7 @@ export class GroqProvider implements AIProvider {
       return {
         rawText,
         provider: 'groq',
+        modelUsed: 'llama-3.3-70b-versatile',
         liveWebGrounding: false,
         searchQueries: [],
         sources: [

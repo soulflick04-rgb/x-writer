@@ -125,6 +125,7 @@ export interface QualityCheck {
 
 export interface ProviderMetadata {
   provider: 'gemini' | 'groq' | 'openrouter';
+  model_used?: string;
   fallback_used: boolean;
   provider_chain: string[];
   live_web_grounding: boolean;
