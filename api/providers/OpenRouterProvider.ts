@@ -20,21 +20,61 @@ export class OpenRouterProvider implements AIProvider {
 
     const startTime = Date.now();
 
-    // Fast candidate models for OpenRouter with live web search grounding
-    const modelsToTry = [
-      'google/gemini-2.5-flash:online',
-      'meta-llama/llama-3.3-70b-instruct:online',
-      'google/gemini-2.5-flash',
-      'meta-llama/llama-3.3-70b-instruct',
-      'openrouter/auto'
+    // Fast candidate configs for OpenRouter with live web search
+    const candidates = [
+      {
+        model: 'google/gemini-2.5-flash',
+        plugins: [{ id: 'web', max_results: 3 }],
+        isOnline: true
+      },
+      {
+        model: 'google/gemini-2.5-flash:online',
+        plugins: undefined,
+        isOnline: true
+      },
+      {
+        model: 'meta-llama/llama-3.3-70b-instruct',
+        plugins: [{ id: 'web', max_results: 3 }],
+        isOnline: true
+      },
+      {
+        model: 'google/gemini-2.5-flash',
+        plugins: undefined,
+        isOnline: false
+      },
+      {
+        model: 'openrouter/auto',
+        plugins: undefined,
+        isOnline: false
+      }
     ];
 
     let lastError: any = null;
 
-    for (const model of modelsToTry) {
+    for (const candidate of candidates) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 7000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
       try {
+        const bodyPayload: any = {
+          model: candidate.model,
+          messages: [
+            {
+              role: 'system',
+              content: `${req.systemPrompt}\n\nIMPORTANT: You are operating as the OpenRouter fallback provider with live web search. Output strictly valid JSON matching the requested cinema research schema with full complete post drafts.`
+            },
+            {
+              role: 'user',
+              content: `TASK:\n${req.userPrompt}\n\nExecute cinema analysis now in JSON format.`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 3000
+        };
+
+        if (candidate.plugins) {
+          bodyPayload.plugins = candidate.plugins;
+        }
+
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -43,20 +83,7 @@ export class OpenRouterProvider implements AIProvider {
             'HTTP-Referer': 'https://soulflick.ai',
             'X-Title': 'Soulflick AI'
           },
-          body: JSON.stringify({
-            model,
-            messages: [
-              {
-                role: 'system',
-                content: `${req.systemPrompt}\n\nIMPORTANT: You are operating as the OpenRouter fallback provider with live web search. Output strictly valid JSON matching the requested cinema research schema with full complete post drafts.`
-              },
-              {
-                role: 'user',
-                content: `TASK:\n${req.userPrompt}\n\nExecute cinema analysis now in JSON format.`
-              }
-            ],
-            temperature: 0.7
-          }),
+          body: JSON.stringify(bodyPayload),
           signal: controller.signal
         });
 
@@ -67,19 +94,18 @@ export class OpenRouterProvider implements AIProvider {
           const rawText = data.choices?.[0]?.message?.content;
 
           if (rawText) {
-            clearTimeout(timeoutId);
-            const isOnline = model.includes(':online') || model.includes('sonar');
+            const isOnline = candidate.isOnline;
             const sources = isOnline
               ? [
                   {
-                    title: `Live Web Grounded via OpenRouter (${model})`,
+                    title: `Live Web Grounded via OpenRouter (${candidate.model})`,
                     source_type: 'Live Web Grounding',
                     confidence_level: 'Live Web Source'
                   }
                 ]
               : [
                   {
-                    title: `Fallback Provider (OpenRouter ${model})`,
+                    title: `Fallback Provider (OpenRouter ${candidate.model})`,
                     source_type: 'Model Synthesis (Offline/Fallback)',
                     confidence_level: 'Pre-trained Synthesis'
                   }
@@ -88,7 +114,7 @@ export class OpenRouterProvider implements AIProvider {
             return {
               rawText,
               provider: 'openrouter',
-              modelUsed: model,
+              modelUsed: candidate.model + (candidate.isOnline ? ' (Live Web)' : ''),
               liveWebGrounding: isOnline,
               searchQueries: isOnline ? [req.userPrompt.substring(0, 80)] : [],
               sources,
@@ -97,7 +123,7 @@ export class OpenRouterProvider implements AIProvider {
           }
         } else {
           const errData: any = await res.json().catch(() => ({}));
-          lastError = new Error(`OpenRouter (${model}) error ${res.status}: ${errData.error?.message || 'Failed'}`);
+          lastError = new Error(`OpenRouter (${candidate.model}) error ${res.status}: ${errData.error?.message || 'Failed'}`);
         }
       } catch (err: any) {
         lastError = err;
