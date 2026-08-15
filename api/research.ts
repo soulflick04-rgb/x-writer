@@ -41,9 +41,37 @@ export default async function handler(req: Request) {
     const groqKey = (process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || '').trim().replace(/^["']|["']$/g, '');
     const openRouterKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || '').trim().replace(/^["']|["']$/g, '');
 
-    const systemPrompt = `You are Soulflick AI, elite cinema analyst & X writer.
-Research current cinema news from the last 24h (up to 7d) and write an original, high-engagement X post with 4 persona variants (primary, smart, spicy, emotional).
-Never invent fake quotes, fake box office numbers, or unverified claims.
+    const selectedLength = params.length || 'Medium';
+
+    let lengthInstruction = '';
+    if (selectedLength === 'Short') {
+      lengthInstruction = `STRICT LENGTH: SHORT (100 - 180 characters maximum per draft).
+- 1 punchy 1-line hook followed by 1 sharp, high-density observation.
+- CRITICAL: EACH DRAFT MUST BE UNDER 200 CHARACTERS. NEVER WRITE LONG PARAGRAPHS.`;
+    } else if (selectedLength === 'Long') {
+      lengthInstruction = `STRICT LENGTH: LONG (Thread Format).
+- Write a 2-3 tweet thread formatted with "1/2" and "2/2" or "1/3", "2/3", "3/3".
+- CRITICAL: Each numbered tweet in the thread MUST be strictly UNDER 275 characters so each part fits cleanly into a single X post.`;
+    } else {
+      lengthInstruction = `STRICT LENGTH: MEDIUM (200 - 275 characters maximum per draft).
+- Standard single X post sweet-spot: 1 punchy hook line -> 1 line break -> 2 sentences of verified context & craft insight -> Natural human verdict.
+- CRITICAL: EACH DRAFT MUST BE STRICTLY UNDER 280 CHARACTERS. NEVER EXCEED 280 CHARACTERS.`;
+    }
+
+    const systemPrompt = `You are Soulflick AI, an elite cinema essayist, film analyst, and top-tier X writer for cinephiles.
+Your writing is sophisticated, high-density, and sounds like an authentic human film insider (like Criterion Collection liner notes or a veteran cinematographer/screenwriter).
+
+ABSOLUTE WRITING RULES:
+1. BAN ALL CHEAP AI CLICHÉS:
+   - NEVER use: "Mind blown", "Let that sink in", "Masterpiece alert", "Game changer", "What do you think?", "Drop your thoughts below", "Here's the breakdown:", "Thread 🧵".
+2. WRITE WITH CINEPHILE CRAFT:
+   - Focus on intentional director choices, lenses, optical distortion, blocking geometry, sound design, budget recoups, and script architecture.
+3. ${lengthInstruction}
+4. 4 DISTINCT PERSONAS:
+   - primary: High-impact cinephile take with a curiosity gap and sharp conclusion.
+   - smart: Auteur craft analysis (lenses, blocking, editing rhythm, lighting).
+   - spicy: Defensible contrarian re-evaluation that dismantles common consensus with verifiable facts.
+   - emotional: Resonant human devotion to the craft or actor/director vulnerability.
 
 PARAMETERS:
 - Content Type: ${params.contentType || 'Smart Film Analysis'}
@@ -51,8 +79,8 @@ PARAMETERS:
 - Language: ${params.language || 'English'}
 - Tone: ${params.tone || 'Human / Conversational'}
 - Intensity: ${params.intensity || 6}/10
-- Length: ${params.length || 'Medium'}
-${params.specificTopic ? `- Focus specifically on: "${params.specificTopic}"` : ''}
+- Selected Length: ${selectedLength}
+${params.specificTopic ? `- Specific Cinema Topic: "${params.specificTopic}"` : ''}
 
 RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
 {
@@ -83,10 +111,10 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
     { "claim": "Factual claim", "source": "Trade publication", "source_date": "August 2026", "confidence": "Verified (Official)", "verified": true }
   ],
   "drafts": {
-    "primary": "Complete ready-to-post X post (Hook -> Context -> Observation -> Insight -> Strong Ending)",
-    "smart": "Intelligent critic post focusing on auteur craft",
-    "spicy": "Sharp defensible contrarian take with high debate catalyst",
-    "emotional": "Resonant human connection"
+    "primary": "Crafted X post adhering strictly to ${selectedLength} length",
+    "smart": "Smart film craft post adhering strictly to ${selectedLength} length",
+    "spicy": "Contrarian take post adhering strictly to ${selectedLength} length",
+    "emotional": "Human story post adhering strictly to ${selectedLength} length"
   },
   "recommended_hashtags": ["#FilmX", "#Cinema"],
   "image_recommendation": {
@@ -108,7 +136,7 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
     let lastError: any = null;
     let finalResult: any = null;
 
-    // 1. PRIMARY: Gemini with Google Search Grounding (Optimized to 2048 tokens & 14s timeout)
+    // 1. PRIMARY: Gemini with Google Search Grounding (2048 tokens & 14s timeout)
     if (geminiKeys.length > 0 && attempts < maxAttempts) {
       for (const gKey of geminiKeys) {
         if (attempts >= maxAttempts) break;

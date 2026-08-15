@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Copy, 
   Check, 
@@ -16,7 +16,10 @@ import {
   Camera, 
   HelpCircle,
   FileText,
-  Hash
+  Hash,
+  Scissors,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import { GroundedResearchResult, DraftPersonaVariant } from '../../types';
 import { storage } from '../../services/storage';
@@ -34,6 +37,22 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
   onPostDirectlyToX,
 }) => {
   const [selectedPersona, setSelectedPersona] = useState<DraftPersonaVariant>('primary');
+  const [draftTexts, setDraftTexts] = useState<Record<DraftPersonaVariant, string>>({
+    primary: result.drafts?.primary || '',
+    smart: result.drafts?.smart || '',
+    spicy: result.drafts?.spicy || '',
+    emotional: result.drafts?.emotional || ''
+  });
+
+  useEffect(() => {
+    setDraftTexts({
+      primary: result.drafts?.primary || '',
+      smart: result.drafts?.smart || '',
+      spicy: result.drafts?.spicy || '',
+      emotional: result.drafts?.emotional || ''
+    });
+  }, [result]);
+
   const [copied, setCopied] = useState(false);
   const [copiedWithHashtags, setCopiedWithHashtags] = useState(false);
   const [copiedAllHashtags, setCopiedAllHashtags] = useState(false);
@@ -45,16 +64,9 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [showFactDrawer, setShowFactDrawer] = useState(false);
 
-  const drafts = result.drafts || {
-    primary: '',
-    smart: '',
-    spicy: '',
-    emotional: ''
-  };
-
-  const activePostContent = drafts[selectedPersona] || drafts.primary || '';
+  const activePostContent = draftTexts[selectedPersona] || draftTexts.primary || '';
   const charCount = activePostContent.length;
-  const isThread = charCount > 280;
+  const isOverLimit = charCount > 280;
 
   const hashtags = result.recommended_hashtags && result.recommended_hashtags.length > 0 
     ? result.recommended_hashtags 
@@ -62,6 +74,23 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
 
   const formattedHashtagString = hashtags.join(' ');
   const postWithHashtags = `${activePostContent}\n\n${formattedHashtagString}`;
+
+  const handleTextChange = (text: string) => {
+    setDraftTexts(prev => ({ ...prev, [selectedPersona]: text }));
+  };
+
+  const handleAutoTrimTo280 = () => {
+    if (activePostContent.length <= 280) return;
+    // Smart sentence-based trimming to <= 280 chars
+    const trimmed = activePostContent.substring(0, 277);
+    const lastPeriod = Math.max(trimmed.lastIndexOf('. '), trimmed.lastIndexOf('!\n'), trimmed.lastIndexOf('?\n'), trimmed.lastIndexOf('\n\n'));
+    if (lastPeriod > 180) {
+      handleTextChange(trimmed.substring(0, lastPeriod + 1).trim());
+    } else {
+      const lastSpace = trimmed.lastIndexOf(' ');
+      handleTextChange((trimmed.substring(0, lastSpace) + '...').trim());
+    }
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(activePostContent);
@@ -133,10 +162,10 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
   };
 
   const personas: { id: DraftPersonaVariant; label: string; desc: string }[] = [
-    { id: 'primary', label: 'Primary', desc: 'Balanced & High Impact' },
-    { id: 'smart', label: 'Smart', desc: 'Auteur & Film Craft' },
-    { id: 'spicy', label: 'Spicy', desc: 'Sharp Contrarian Take' },
-    { id: 'emotional', label: 'Emotional', desc: 'Human & Nostalgic' },
+    { id: 'primary', label: 'Primary Take', desc: 'High-Density Curiosity Hook' },
+    { id: 'smart', label: 'Auteur Craft', desc: 'Lenses, Blocking & Subtext' },
+    { id: 'spicy', label: 'Contrarian', desc: 'Sharp Defensible Re-evaluation' },
+    { id: 'emotional', label: 'Human Story', desc: 'Devotion to Craft & Lore' },
   ];
 
   const visualPromptText = result.image_recommendation?.ai_prompt || 
@@ -154,6 +183,11 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
               <span className="text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#F4EFE6] dark:bg-[#2B241E] text-[#8C7A65] dark:text-[#C29358] border border-[#E8DEC\-B] dark:border-[#3D3328] font-bold">
                 Opportunity Score: {result.recommended_topic.opportunity_score || 92}/100
               </span>
+              {result.provider_used && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#EAE1D3] dark:bg-[#2A241F] text-[#6B5E4E] dark:text-[#D4A373]">
+                  {result.provider_used}
+                </span>
+              )}
               {result.cached && (
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#EAE1D3] text-[#6B5E4E]">
                   Grounded Cache (0 API Cost)
@@ -232,9 +266,31 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
             <span className="text-xs font-mono uppercase tracking-wider text-[#8C8072] font-semibold">
               Select Writing Persona
             </span>
-            <span className="text-xs text-[#8C8072] font-mono">
-              {charCount} / 280 chars {isThread && '• (Thread)'}
-            </span>
+            
+            {/* Live Character Limit Badge */}
+            <div className="flex items-center gap-2">
+              <span className={`text-xs font-mono px-2.5 py-1 rounded-full flex items-center gap-1 font-semibold ${
+                isOverLimit 
+                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20' 
+                  : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+              }`}>
+                {isOverLimit ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
+                <span>{charCount} / 280 chars</span>
+                {isOverLimit && <span>({charCount - 280} over limit)</span>}
+              </span>
+
+              {isOverLimit && (
+                <button
+                  type="button"
+                  onClick={handleAutoTrimTo280}
+                  className="inline-flex items-center gap-1 text-[11px] font-mono px-2.5 py-1 rounded-full bg-[#2A241F] text-[#FDFBF7] dark:bg-[#F3EDE6] dark:text-[#1E1B18] hover:opacity-90 shadow-2xs cursor-pointer"
+                  title="Auto-trim to fit single X post character limit"
+                >
+                  <Scissors className="w-3 h-3" />
+                  <span>Trim to 280</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -257,11 +313,15 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
             })}
           </div>
 
-          {/* 3. Post Content Box */}
+          {/* 3. Editable Post Content Box */}
           <div className="relative mt-4">
-            <div className="w-full p-6 rounded-2xl bg-[#FAF7F2] dark:bg-[#171513] border border-[#E8DEC\-B] dark:border-[#2E2822] text-[#221D18] dark:text-[#FAF6F0] font-sans text-sm sm:text-base leading-relaxed whitespace-pre-wrap selection:bg-[#D4A373]">
-              {activePostContent}
-            </div>
+            <textarea
+              rows={5}
+              value={activePostContent}
+              onChange={(e) => handleTextChange(e.target.value)}
+              className="w-full p-6 rounded-2xl bg-[#FAF7F2] dark:bg-[#171513] border border-[#E8DEC\-B] dark:border-[#2E2822] text-[#221D18] dark:text-[#FAF6F0] font-sans text-sm sm:text-base leading-relaxed whitespace-pre-wrap selection:bg-[#D4A373] focus:outline-none focus:border-[#C29358] focus:ring-1 focus:ring-[#C29358] resize-y"
+              placeholder="Post content..."
+            />
 
             {/* Relevant Cinema Hashtags Bar */}
             <div className="mt-3 p-3.5 rounded-2xl bg-white/70 dark:bg-[#1E1B18]/80 border border-[#E8DEC\-B] dark:border-[#302A22] flex flex-wrap items-center justify-between gap-2.5">

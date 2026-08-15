@@ -151,6 +151,7 @@ export interface GroundedResearchResult {
   // Execution metadata
   execution_time_ms?: number;
   cached?: boolean;
+  provider_used?: string;
 }
 
 export interface ResearchRunRecord {
