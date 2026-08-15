@@ -1,8 +1,8 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
-import researchHandler from './api/research.ts';
-import topicsHandler from './api/topics.ts';
+import researchHandler from './api/research';
+import topicsHandler from './api/topics';
 
 // Local development server API middleware
 function apiServerPlugin() {

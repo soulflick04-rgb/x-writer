@@ -1,7 +1,7 @@
-import { GeminiProvider } from './providers/GeminiProvider.ts';
-import { GroqProvider } from './providers/GroqProvider.ts';
-import { OpenRouterProvider } from './providers/OpenRouterProvider.ts';
-import { ProviderRequest } from './providers/types.ts';
+import { GeminiProvider } from './providers/GeminiProvider';
+import { GroqProvider } from './providers/GroqProvider';
+import { OpenRouterProvider } from './providers/OpenRouterProvider';
+import { ProviderRequest } from './providers/types';
 
 export const config = {
   runtime: 'edge',

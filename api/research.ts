@@ -1,5 +1,5 @@
-import { ProviderRouter } from './providers/ProviderRouter.ts';
-import { ProviderRequest } from './providers/types.ts';
+import { ProviderRouter } from './providers/ProviderRouter';
+import { ProviderRequest } from './providers/types';
 
 // Vercel Edge Runtime - High Performance, Zero Cold Start
 export const config = {
