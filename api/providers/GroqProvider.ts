@@ -20,7 +20,7 @@ export class GroqProvider implements AIProvider {
 
     const startTime = Date.now();
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     try {
       const systemInstruction = `${req.systemPrompt}\n\nIMPORTANT PROVIDER CONSTRAINT: You are operating as the Groq fallback provider without native live web search. Do not fabricate unverifiable real-time events, but use your comprehensive film craft and historical/recent knowledge to fulfill the structured JSON cinema analysis. Output strictly valid JSON.`;

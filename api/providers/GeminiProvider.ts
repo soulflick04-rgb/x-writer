@@ -31,20 +31,21 @@ export class GeminiProvider implements AIProvider {
     let lastError: any = null;
     const startTime = Date.now();
 
-    // Models to try with Google Search grounding: gemini-2.5-flash, gemini-3.7-flash, gemini-flash-latest, etc.
+    // Models to try with Google Search grounding
     const modelsToTry = [
       'gemini-2.5-flash',
       'gemini-3.7-flash',
-      'gemini-flash-latest',
-      'gemini-3.5-flash',
-      'gemini-3-flash-preview'
+      'gemini-flash-latest'
     ];
 
     for (const key of keys) {
+      let keyQuotaExceeded = false;
       for (const model of modelsToTry) {
+        if (keyQuotaExceeded) break;
+
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
 
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
           
@@ -118,9 +119,12 @@ export class GeminiProvider implements AIProvider {
             };
           } else {
             const errData: any = await res.json().catch(() => ({}));
-            const errMsg = errData.error?.message || `HTTP ${res.status}`;
+            const errMsg = errData.error?.message || 'Failure';
             lastError = new Error(`Gemini (${model}) failed: ${errMsg}`);
-            // If model is not found or rate limited, move to next model/key
+            if (res.status === 429 || errMsg.includes('quota') || errMsg.includes('Quota')) {
+              keyQuotaExceeded = true;
+              break; // Skip rest of models for this exhausted key immediately
+            }
           }
         } catch (err: any) {
           lastError = err;

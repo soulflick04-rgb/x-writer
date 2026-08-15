@@ -20,11 +20,11 @@ export class OpenRouterProvider implements AIProvider {
 
     const startTime = Date.now();
 
-    // Candidates for OpenRouter with live web search grounding capability
+    // Fast candidate models for OpenRouter with live web search grounding
     const modelsToTry = [
-      'perplexity/sonar',
       'google/gemini-2.5-flash:online',
       'meta-llama/llama-3.3-70b-instruct:online',
+      'google/gemini-2.5-flash',
       'meta-llama/llama-3.3-70b-instruct',
       'openrouter/auto'
     ];
@@ -33,7 +33,7 @@ export class OpenRouterProvider implements AIProvider {
 
     for (const model of modelsToTry) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 25000);
+      const timeoutId = setTimeout(() => controller.abort(), 7000);
       try {
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
