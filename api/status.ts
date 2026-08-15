@@ -1,9 +1,5 @@
 import { getGeminiQuotaTelemetry } from './providers/GeminiProvider';
 
-export const config = {
-  runtime: 'edge',
-};
-
 export default async function handler(_req: Request) {
   try {
     const quota = getGeminiQuotaTelemetry();

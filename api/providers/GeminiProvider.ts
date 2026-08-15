@@ -76,12 +76,8 @@ export class GeminiProvider implements AIProvider {
     let lastError: any = null;
     const startTime = Date.now();
 
-    // Fast candidate models with native Google Search Grounding
-    const modelsToTry = [
-      'gemini-2.5-flash',
-      'gemini-3.7-flash',
-      'gemini-flash-latest'
-    ];
+    // Primary high-speed Google Search Grounded model
+    const modelsToTry = ['gemini-2.5-flash'];
 
     for (const key of keys) {
       let keyQuotaExceeded = false;

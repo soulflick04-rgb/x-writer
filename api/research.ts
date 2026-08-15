@@ -1,11 +1,6 @@
 import { ProviderRouter } from './providers/ProviderRouter';
 import { ProviderRequest } from './providers/types';
 
-// Vercel Edge Runtime - High Performance, Zero Cold Start
-export const config = {
-  runtime: 'edge',
-};
-
 const router = new ProviderRouter();
 
 export default async function handler(req: Request) {

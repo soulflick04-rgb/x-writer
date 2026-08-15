@@ -20,27 +20,12 @@ export class OpenRouterProvider implements AIProvider {
 
     const startTime = Date.now();
 
-    // Fast candidate configs for OpenRouter with live web search
+    // Fast candidates for OpenRouter
     const candidates = [
       {
         model: 'google/gemini-2.5-flash',
         plugins: [{ id: 'web', max_results: 3 }],
         isOnline: true
-      },
-      {
-        model: 'google/gemini-2.5-flash:online',
-        plugins: undefined,
-        isOnline: true
-      },
-      {
-        model: 'meta-llama/llama-3.3-70b-instruct',
-        plugins: [{ id: 'web', max_results: 3 }],
-        isOnline: true
-      },
-      {
-        model: 'google/gemini-2.5-flash',
-        plugins: undefined,
-        isOnline: false
       },
       {
         model: 'openrouter/auto',
@@ -53,14 +38,14 @@ export class OpenRouterProvider implements AIProvider {
 
     for (const candidate of candidates) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
       try {
         const bodyPayload: any = {
           model: candidate.model,
           messages: [
             {
               role: 'system',
-              content: `${req.systemPrompt}\n\nIMPORTANT: You are operating as the OpenRouter fallback provider with live web search. Output strictly valid JSON matching the requested cinema research schema with full complete post drafts.`
+              content: `${req.systemPrompt}\n\nIMPORTANT: You are operating as the OpenRouter fallback provider. Output strictly valid JSON matching the requested cinema research schema with full complete post drafts.`
             },
             {
               role: 'user',
@@ -88,6 +73,11 @@ export class OpenRouterProvider implements AIProvider {
         });
 
         clearTimeout(timeoutId);
+
+        if (res.status === 402 || res.status === 401) {
+          // Out of credits or invalid key - do not waste time retrying other candidates
+          throw new Error(`OpenRouter account error (${res.status}): Credits exhausted or unauthorized.`);
+        }
 
         if (res.ok) {
           const data: any = await res.json();
@@ -127,9 +117,12 @@ export class OpenRouterProvider implements AIProvider {
         }
       } catch (err: any) {
         lastError = err;
+        if (err?.message?.includes('402') || err?.message?.includes('Credits exhausted')) {
+          break; // Stop immediately
+        }
       }
     }
 
-    throw lastError || new Error('OpenRouter fallback failed across candidate models.');
+    throw lastError || new Error('OpenRouter fallback failed.');
   }
 }

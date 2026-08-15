@@ -3,10 +3,6 @@ import { GroqProvider } from './providers/GroqProvider';
 import { OpenRouterProvider } from './providers/OpenRouterProvider';
 import { ProviderRequest } from './providers/types';
 
-export const config = {
-  runtime: 'edge',
-};
-
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
