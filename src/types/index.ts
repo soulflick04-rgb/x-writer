@@ -255,13 +255,6 @@ export interface ReferencePost {
 }
 
 export interface AppSettings {
-  supabaseUrl: string;
-  supabaseAnonKey: string;
-  supabaseServiceKey?: string;
-  geminiApiKey: string;
-  geminiApiKey2?: string;
-  useEdgeFunction: boolean;
-  edgeFunctionUrl: string;
   enableClientCache: boolean;
   cacheTtlMinutes: number;
   defaultAudience: AudienceType;

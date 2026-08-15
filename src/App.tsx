@@ -36,7 +36,6 @@ import {
 
 import { storage } from './services/storage';
 import { geminiService } from './services/geminiService';
-import { supabaseService } from './services/supabaseClient';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 

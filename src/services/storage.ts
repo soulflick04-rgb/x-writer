@@ -23,11 +23,6 @@ const STORAGE_KEYS = {
 };
 
 export const defaultSettings: AppSettings = {
-  supabaseUrl: '',
-  supabaseAnonKey: '',
-  geminiApiKey: '',
-  useEdgeFunction: false,
-  edgeFunctionUrl: 'https://your-project.supabase.co/functions/v1/research-and-create',
   enableClientCache: true,
   cacheTtlMinutes: 120,
   defaultAudience: 'Hollywood / Global Cinema',
@@ -35,7 +30,7 @@ export const defaultSettings: AppSettings = {
   defaultTone: 'Human / Conversational',
   defaultIntensity: 6,
   creatorHandle: 'cinephile_x',
-  creatorName: 'Cinema Strategist',
+  creatorName: 'Arjun',
 };
 
 export const defaultStyleProfile: StyleProfile = {
@@ -159,58 +154,21 @@ export const initialOpportunities: TopicOpportunity[] = [
 
 export const storage = {
   getSettings(): AppSettings {
-    const rawEnv = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.GEMINI_API_KEY || '';
-    const rawEnv2 = (import.meta as any).env?.VITE_GEMINI_API_KEY_2 || (import.meta as any).env?.GEMINI_API_KEY_2 || '';
-    const envKey = String(rawEnv).trim().replace(/^["']|["']$/g, '');
-    const envKey2 = String(rawEnv2).trim().replace(/^["']|["']$/g, '');
-    
     const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-    if (!raw) return { ...defaultSettings, geminiApiKey: envKey, geminiApiKey2: envKey2 };
+    if (!raw) return defaultSettings;
     try {
       const parsed = JSON.parse(raw);
-      const storedKey = String(parsed.geminiApiKey || '').trim().replace(/^["']|["']$/g, '');
-      const storedKey2 = String(parsed.geminiApiKey2 || '').trim().replace(/^["']|["']$/g, '');
       return { 
         ...defaultSettings, 
         ...parsed, 
-        geminiApiKey: storedKey || envKey || '',
-        geminiApiKey2: storedKey2 || envKey2 || ''
       };
     } catch {
-      return { ...defaultSettings, geminiApiKey: envKey, geminiApiKey2: envKey2 };
+      return defaultSettings;
     }
-  },
-
-  getAllGeminiKeys(): string[] {
-    const s = this.getSettings();
-    const keys: string[] = [];
-    
-    // Process Key 1 (supports comma separated)
-    if (s.geminiApiKey) {
-      s.geminiApiKey.split(',').forEach(k => {
-        const clean = k.trim().replace(/^["']|["']$/g, '');
-        if (clean && !keys.includes(clean)) keys.push(clean);
-      });
-    }
-
-    // Process Key 2
-    if (s.geminiApiKey2) {
-      s.geminiApiKey2.split(',').forEach(k => {
-        const clean = k.trim().replace(/^["']|["']$/g, '');
-        if (clean && !keys.includes(clean)) keys.push(clean);
-      });
-    }
-
-    return keys;
   },
 
   saveSettings(settings: AppSettings): void {
-    const sanitized = {
-      ...settings,
-      geminiApiKey: String(settings.geminiApiKey || '').trim().replace(/^["']|["']$/g, ''),
-      geminiApiKey2: String(settings.geminiApiKey2 || '').trim().replace(/^["']|["']$/g, '')
-    };
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(sanitized));
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   },
 
   getStyleProfile(): StyleProfile {
@@ -380,5 +338,13 @@ export const storage = {
       timestamp: Date.now(),
       data
     }));
+  },
+
+  clearResearchCache(): void {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith(STORAGE_KEYS.RESEARCH_CACHE)) {
+        localStorage.removeItem(key);
+      }
+    });
   }
 };
