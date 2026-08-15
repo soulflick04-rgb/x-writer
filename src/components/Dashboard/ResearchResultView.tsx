@@ -70,7 +70,6 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
   const [copiedSpecificKeyword, setCopiedSpecificKeyword] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [showFactDrawer, setShowFactDrawer] = useState(false);
-  const [showDebugTelemetry, setShowDebugTelemetry] = useState(false);
 
   const activePostContent = draftTexts[selectedPersona] || draftTexts.primary || '';
   const charCount = activePostContent.length;
@@ -228,15 +227,6 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
 
           <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => setShowDebugTelemetry(!showDebugTelemetry)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#FAF7F2] dark:bg-[#25201A] border border-[#E5DACB] dark:border-[#3A3228] text-[#5C5042] dark:text-[#D4A373] hover:border-[#C29358] transition-colors"
-              title="Developer Debug Telemetry"
-            >
-              <Terminal className="w-3.5 h-3.5 text-[#C29358]" />
-              <span>{showDebugTelemetry ? 'Hide Telemetry' : 'Dev Grounding'}</span>
-            </button>
-
-            <button
               onClick={() => setShowFactDrawer(!showFactDrawer)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#FAF7F2] dark:bg-[#25201A] border border-[#E5DACB] dark:border-[#3A3228] text-[#5C5042] dark:text-[#D4A373] hover:border-[#C29358] transition-colors"
             >
@@ -245,93 +235,6 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
             </button>
           </div>
         </div>
-
-        {/* Developer Grounding & Telemetry Section */}
-        {showDebugTelemetry && (
-          <div className="bg-[#191613] text-[#F3EDE6] border border-[#3D3328] rounded-2xl p-5 space-y-4 animate-fade-in font-mono text-xs shadow-inner">
-            <div className="flex items-center justify-between border-b border-[#2F2720] pb-3">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-[#C29358]" />
-                <span className="font-bold text-xs uppercase tracking-wider text-[#D4A373]">
-                  AI Provider & Live Search Grounding Telemetry (Dev Mode)
-                </span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-[#2B231B] text-[#C29358] border border-[#443729]">
-                Dynamic Runtime: {result.provider_metadata?.current_date || new Date().toDateString()}
-              </span>
-            </div>
-
-            <GeminiStatusWidget metadata={result.provider_metadata} />
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
-                <span className="text-[10px] text-[#9E9080] block">Provider</span>
-                <span className="text-xs font-bold text-white uppercase">
-                  {result.provider_metadata?.provider || result.provider_used || 'Gemini'}
-                </span>
-              </div>
-
-              <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
-                <span className="text-[10px] text-[#9E9080] block">Model Running</span>
-                <span className="text-xs font-bold text-[#D4A373] truncate block" title={result.provider_metadata?.model_used || 'gemini-2.5-flash'}>
-                  {result.provider_metadata?.model_used || 'gemini-2.5-flash'}
-                </span>
-              </div>
-
-              <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
-                <span className="text-[10px] text-[#9E9080] block">Live Search</span>
-                <span className={`text-xs font-bold ${
-                  result.provider_metadata?.live_web_grounding ? 'text-emerald-400' : 'text-amber-400'
-                }`}>
-                  {result.provider_metadata?.live_web_grounding ? 'YES (Active)' : 'NO (Offline)'}
-                </span>
-              </div>
-
-              <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
-                <span className="text-[10px] text-[#9E9080] block">Fallback Used</span>
-                <span className="text-xs font-bold text-white">
-                  {result.provider_metadata?.fallback_used ? 'YES' : 'NO (Primary)'}
-                </span>
-              </div>
-
-              <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">
-                <span className="text-[10px] text-[#9E9080] block">Latency</span>
-                <span className="text-xs font-bold text-[#D4A373]">
-                  {result.provider_metadata?.execution_time_ms || result.execution_time_ms || 0} ms
-                </span>
-              </div>
-            </div>
-
-            {result.provider_metadata?.provider_chain && (
-              <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20] text-[11px] flex items-center gap-2">
-                <span className="text-[#9E9080]">Provider Execution Chain:</span>
-                <span className="text-white font-semibold">
-                  {result.provider_metadata.provider_chain.join(' → ')}
-                </span>
-              </div>
-            )}
-
-            {result.provider_metadata?.search_queries && result.provider_metadata.search_queries.length > 0 && (
-              <div className="bg-[#221D18] p-3 rounded-xl border border-[#332A20] space-y-1.5">
-                <span className="text-[10px] text-[#9E9080] uppercase tracking-wider block font-bold">
-                  Google Search Queries Executed ({result.provider_metadata.search_queries.length}):
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {result.provider_metadata.search_queries.map((q, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded bg-[#171411] text-[#E0D5C5] border border-[#3A3025] text-[11px]">
-                      🔍 {q}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20] flex flex-wrap items-center justify-between text-[11px] text-[#9E9080]">
-              <span>Verified Sources Grounded: <strong className="text-white">{result.sources?.length || 0}</strong></span>
-              <span>Newest Source: <strong className="text-[#D4A373]">{result.provider_metadata?.newest_source_date || '2026'}</strong></span>
-            </div>
-          </div>
-        )}
 
         {/* Fact verification drawer if expanded */}
         {showFactDrawer && (
