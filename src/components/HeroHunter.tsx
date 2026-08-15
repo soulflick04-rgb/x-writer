@@ -395,20 +395,27 @@ export const HeroHunter: React.FC<HeroHunterProps> = ({
         <div className="flex items-center gap-1 bg-white/70 dark:bg-[#1E1B18]/80 px-2.5 py-1 rounded-full border border-[#EBE3D5] dark:border-[#332D26] shadow-2xs">
           <AlignLeft className="w-3 h-3 text-[#9E9283]" />
           <span className="text-[10px] font-mono text-[#9E9283] mr-0.5 uppercase">Length:</span>
-          {lengths.map((len) => (
-            <button
-              key={len}
-              type="button"
-              onClick={() => setLength(len)}
-              className={`px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold transition-all ${
-                length === len
-                  ? 'bg-[#2A241F] text-[#FDFBF7] dark:bg-[#F3EDE6] dark:text-[#1E1B18] shadow-2xs'
-                  : 'text-[#7A6F62] dark:text-[#9E9283] hover:text-[#2A241F] dark:hover:text-white'
-              }`}
-            >
-              {len}
-            </button>
-          ))}
+          {lengths.map((len) => {
+            const labelMap: Record<LengthType, string> = {
+              'Short': 'Short (280c)',
+              'Medium': 'Medium (Expanded)',
+              'Long': 'Long (X Premium)'
+            };
+            return (
+              <button
+                key={len}
+                type="button"
+                onClick={() => setLength(len)}
+                className={`px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold transition-all ${
+                  length === len
+                    ? 'bg-[#2A241F] text-[#FDFBF7] dark:bg-[#F3EDE6] dark:text-[#1E1B18] shadow-2xs'
+                    : 'text-[#7A6F62] dark:text-[#9E9283] hover:text-[#2A241F] dark:hover:text-white'
+                }`}
+              >
+                {labelMap[len] || len}
+              </button>
+            );
+          })}
         </div>
 
         {/* Hashtag Option */}

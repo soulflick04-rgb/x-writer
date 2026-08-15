@@ -45,36 +45,49 @@ export default async function handler(req: Request) {
 
     let lengthInstruction = '';
     if (selectedLength === 'Short') {
-      lengthInstruction = `LENGTH REQUIREMENT: SHORT (120 - 180 characters).
-- 1 punchy 1-line hook + 1 high-density craft observation.
-- CRITICAL: MUST BE COMPLETE SENTENCES (NOT ONE WORD OR A FRAGMENT). Total characters must be under 200.`;
+      lengthInstruction = `LENGTH MODE: SHORT (Standard Single Tweet — Max 280 characters).
+- Target: 200 - 275 characters.
+- Format:
+  [Punchy 1-line curiosity hook]
+
+  [2 sentences of verified craft/story context & human verdict]
+- CRITICAL REQUIREMENT: EACH DRAFT MUST BE FULL COMPLETE SENTENCES, BUT MUST STRICTLY REMAIN UNDER 280 CHARACTERS TO FIT STANDARD FREE X POSTS.`;
     } else if (selectedLength === 'Long') {
-      lengthInstruction = `LENGTH REQUIREMENT: LONG (2-3 Tweet Numbered Thread).
-- Formatted as "1/2" and "2/2" (or "1/3", "2/3", "3/3").
-- CRITICAL: Each numbered part MUST be a full paragraph strictly under 275 characters.`;
+      lengthInstruction = `LENGTH MODE: LONG (X Premium / Blue Tick Long-Form Deep Dive — 1,500 to 3,000 characters).
+- Target: ~300 - 600 words of rich, comprehensive cinephile analysis (taking full advantage of X Premium 25,000 char capacity).
+- Format:
+  [Scroll-stopping Hook — the first 280 characters before the 'Show More' cutoff]
+
+  [The Core Craft & Production Reality — lenses, optical choices, lighting, or budget dynamics]
+
+  [Behind-The-Scenes Lore & Verified Context]
+
+  [Why This Matters to Modern Cinema — lasting analytical conclusion]
+- CRITICAL REQUIREMENT: WRITE A SUBSTANTIVE, FULL-LENGTH CINEMA ESSAY WITH SECTIONS AND COMPLETE PARAGRAPHS.`;
     } else {
-      lengthInstruction = `LENGTH REQUIREMENT: MEDIUM (220 - 275 characters).
-- Standard single X post format:
-  [Hook sentence]
+      lengthInstruction = `LENGTH MODE: MEDIUM (Expanded X Post — 500 to 900 characters).
+- Target: ~100 - 180 words.
+- Format:
+  [Strong 1-line hook]
 
-  [2 sentences explaining the verified craft/box-office mechanism]
+  [2 paragraphs of rich context, trade insights, and technical observations]
 
-  [1 sentence concluding insight]
-- CRITICAL: MUST BE A FULL MULTI-SENTENCE POST UNDER 280 CHARACTERS. NEVER OUTPUT SHORT PHRASES.`;
+  [Memorable human closing takeaway]
+- CRITICAL REQUIREMENT: WRITE AN EXPANDED 2-3 PARAGRAPH POST WITH SUBSTANCE AND DEPTH.`;
     }
 
-    const systemPrompt = `You are Soulflick AI, an elite cinema essayist and film writer.
-You write insightful, high-engagement posts for cinephiles.
+    const systemPrompt = `You are Soulflick AI, an elite cinema essayist and film analyst for cinephiles and film industry insiders.
+Your writing is articulate, rich in film craft knowledge, and captivating.
 
 WRITING PRINCIPLES:
-1. BAN ALL CHEAP CLICHÉS: Never use "Mind blown", "Let that sink in", "Masterpiece alert", "Game changer", "What do you think?", "Drop your thoughts below".
-2. WRITE WITH CINEPHILE CRAFT: Focus on lenses, optical distortion, blocking geometry, sound mixing, lighting, budget math, and script architecture.
+1. BAN CHEAP AI FILLER: Never use "Mind blown", "Let that sink in", "Masterpiece alert", "Game changer", "What do you think?", "Drop your thoughts below".
+2. CINEPHILE CRAFT & DETAIL: Focus on camera lenses, optical distortion, blocking geometry, sound mixing, lighting, box office math, and script architecture.
 3. ${lengthInstruction}
-4. WRITE 4 DISTINCT COMPLETE PERSONAS (EACH MUST BE A COMPLETE POST, NEVER A SINGLE PHRASE):
-   - primary: High-impact cinephile hook, verified mechanism, sharp conclusion.
-   - smart: In-depth auteur craft analysis (lenses, lighting, editing).
-   - spicy: Defensible contrarian re-evaluation that challenges mainstream consensus with facts.
-   - emotional: Resonant human devotion to the craft or vulnerable director/actor lore.
+4. 4 COMPLETE PERSONA DRAFTS (Each must be fully articulated, never a fragment):
+   - primary: High-impact analytical hook, verified mechanism, strong conclusion.
+   - smart: In-depth auteur craft analysis (lenses, lighting, editing, cinematography).
+   - spicy: Defensible contrarian re-evaluation that challenges common consensus with facts.
+   - emotional: Resonant human devotion to the craft or vulnerable actor/director lore.
 
 PARAMETERS:
 - Content Type: ${params.contentType || 'Smart Film Analysis'}
@@ -82,13 +95,14 @@ PARAMETERS:
 - Language: ${params.language || 'English'}
 - Tone: ${params.tone || 'Human / Conversational'}
 - Intensity: ${params.intensity || 6}/10
-- Length: ${selectedLength}
-${params.specificTopic ? `- Specific Topic Focus: "${params.specificTopic}"` : ''}
+- Selected Length Mode: ${selectedLength}
+${params.specificTopic ? `- Specific Film/Topic: "${params.specificTopic}"` : ''}
 
 RESPOND STRICTLY WITH THIS JSON FORMAT:
 \`\`\`json
 {
   "research_timestamp": "${new Date().toISOString()}",
+  "selected_length": "${selectedLength}",
   "recommended_topic": {
     "title": "Specific Cinema Topic Headline",
     "summary": "2-3 sentences explaining the discovery and why it matters to cinema fans.",
@@ -96,17 +110,17 @@ RESPOND STRICTLY WITH THIS JSON FORMAT:
     "opportunity_score": 93
   },
   "drafts": {
-    "primary": "Full multi-sentence primary post adhering to ${selectedLength} length rules",
-    "smart": "Full multi-sentence craft post adhering to ${selectedLength} length rules",
-    "spicy": "Full multi-sentence contrarian take adhering to ${selectedLength} length rules",
-    "emotional": "Full multi-sentence emotional story adhering to ${selectedLength} length rules"
+    "primary": "Full complete primary post crafted specifically for ${selectedLength} mode",
+    "smart": "Full complete craft post crafted specifically for ${selectedLength} mode",
+    "spicy": "Full complete contrarian take crafted specifically for ${selectedLength} mode",
+    "emotional": "Full complete emotional story crafted specifically for ${selectedLength} mode"
   },
   "recommended_hashtags": ["#FilmX", "#Cinema"],
   "image_recommendation": {
     "recommended": "Detailed description of a movie still or BTS photo",
     "search_keywords": ["keyword 1", "keyword 2"],
     "orientation": "Landscape 16:9",
-    "ai_prompt": "Cinematic 35mm film still prompt, photorealistic, anamorphic --ar 16:9"
+    "ai_prompt": "Cinematic 35mm film still prompt, photorealistic, authentic grain, anamorphic --ar 16:9"
   },
   "verified_claims": [
     {
@@ -123,14 +137,14 @@ RESPOND STRICTLY WITH THIS JSON FORMAT:
     let lastError: any = null;
     let finalResult: any = null;
 
-    // 1. PRIMARY: Gemini with Google Search Grounding (3000 tokens & 14s timeout)
+    // 1. PRIMARY: Gemini with Google Search Grounding (4000 tokens & 16s timeout)
     if (geminiKeys.length > 0 && attempts < maxAttempts) {
       for (const gKey of geminiKeys) {
         if (attempts >= maxAttempts) break;
         attempts++;
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 14000);
+          const timeoutId = setTimeout(() => controller.abort(), 16000);
 
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${gKey}`;
           const res = await fetch(endpoint, {
@@ -139,7 +153,7 @@ RESPOND STRICTLY WITH THIS JSON FORMAT:
             body: JSON.stringify({
               contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nPerform cinema research and write the complete JSON drafts now for: ${params.contentType || 'Cinema'}.` }] }],
               tools: [{ googleSearch: {} }],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 3000 }
+              generationConfig: { temperature: 0.7, maxOutputTokens: 4000 }
             }),
             signal: controller.signal
           });
@@ -149,7 +163,7 @@ RESPOND STRICTLY WITH THIS JSON FORMAT:
             const data: any = await res.json();
             const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (rawText) {
-              finalResult = repairAndParseServerJson(rawText);
+              finalResult = repairAndParseServerJson(rawText, selectedLength);
               finalResult.provider_used = 'Gemini (Google Grounded)';
               break;
             }
@@ -193,7 +207,7 @@ RESPOND STRICTLY WITH THIS JSON FORMAT:
           const data: any = await res.json();
           const rawText = data.choices?.[0]?.message?.content;
           if (rawText) {
-            finalResult = repairAndParseServerJson(rawText);
+            finalResult = repairAndParseServerJson(rawText, selectedLength);
             finalResult.provider_used = 'Groq (Llama 3.3 70B)';
           }
         } else {
@@ -233,7 +247,7 @@ RESPOND STRICTLY WITH THIS JSON FORMAT:
           const data: any = await res.json();
           const rawText = data.choices?.[0]?.message?.content;
           if (rawText) {
-            finalResult = repairAndParseServerJson(rawText);
+            finalResult = repairAndParseServerJson(rawText, selectedLength);
             finalResult.provider_used = 'OpenRouter';
           }
         } else {
@@ -268,7 +282,7 @@ RESPOND STRICTLY WITH THIS JSON FORMAT:
   }
 }
 
-function repairAndParseServerJson(raw: string): any {
+function repairAndParseServerJson(raw: string, selectedLength: string): any {
   // 1. Direct JSON Parse attempt
   let clean = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
   const firstBrace = clean.indexOf('{');
@@ -280,14 +294,14 @@ function repairAndParseServerJson(raw: string): any {
   try {
     const parsed = JSON.parse(clean);
     if (parsed.drafts && parsed.drafts.primary) {
-      return sanitizeParsedResult(parsed);
+      return sanitizeParsedResult(parsed, selectedLength);
     }
   } catch (e1) {
     try {
       const withoutTrailing = clean.replace(/,\s*([\}\]])/g, '$1');
       const parsed = JSON.parse(withoutTrailing);
       if (parsed.drafts && parsed.drafts.primary) {
-        return sanitizeParsedResult(parsed);
+        return sanitizeParsedResult(parsed, selectedLength);
       }
     } catch (e2) {}
   }
@@ -323,6 +337,7 @@ function repairAndParseServerJson(raw: string): any {
 
   return {
     research_timestamp: new Date().toISOString(),
+    selected_length: selectedLength,
     recommended_topic: {
       title,
       summary,
@@ -352,9 +367,10 @@ function repairAndParseServerJson(raw: string): any {
   };
 }
 
-function sanitizeParsedResult(parsed: any): any {
+function sanitizeParsedResult(parsed: any, selectedLength: string): any {
   return {
     research_timestamp: parsed.research_timestamp || new Date().toISOString(),
+    selected_length: parsed.selected_length || selectedLength,
     recommended_topic: {
       title: parsed.recommended_topic?.title || parsed.title || 'Cinema Topic Analysis',
       summary: parsed.recommended_topic?.summary || parsed.summary || 'Grounded cinema analysis.',

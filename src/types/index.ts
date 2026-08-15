@@ -152,6 +152,7 @@ export interface GroundedResearchResult {
   execution_time_ms?: number;
   cached?: boolean;
   provider_used?: string;
+  selected_length?: LengthType;
 }
 
 export interface ResearchRunRecord {

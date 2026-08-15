@@ -19,7 +19,8 @@ import {
   Hash,
   Scissors,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Feather
 } from 'lucide-react';
 import { GroundedResearchResult, DraftPersonaVariant } from '../../types';
 import { storage } from '../../services/storage';
@@ -66,7 +67,11 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
 
   const activePostContent = draftTexts[selectedPersona] || draftTexts.primary || '';
   const charCount = activePostContent.length;
-  const isOverLimit = charCount > 280;
+  const wordCount = Math.round(charCount / 5);
+  const selectedLength = result.selected_length || 'Medium';
+
+  const isShortMode = selectedLength === 'Short';
+  const isOverShortLimit = isShortMode && charCount > 280;
 
   const hashtags = result.recommended_hashtags && result.recommended_hashtags.length > 0 
     ? result.recommended_hashtags 
@@ -81,7 +86,6 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
 
   const handleAutoTrimTo280 = () => {
     if (activePostContent.length <= 280) return;
-    // Smart sentence-based trimming to <= 280 chars
     const trimmed = activePostContent.substring(0, 277);
     const lastPeriod = Math.max(trimmed.lastIndexOf('. '), trimmed.lastIndexOf('!\n'), trimmed.lastIndexOf('?\n'), trimmed.lastIndexOf('\n\n'));
     if (lastPeriod > 180) {
@@ -267,19 +271,31 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
               Select Writing Persona
             </span>
             
-            {/* Live Character Limit Badge */}
+            {/* Adaptive Character Count Status Badge */}
             <div className="flex items-center gap-2">
-              <span className={`text-xs font-mono px-2.5 py-1 rounded-full flex items-center gap-1 font-semibold ${
-                isOverLimit 
-                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20' 
-                  : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
-              }`}>
-                {isOverLimit ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-                <span>{charCount} / 280 chars</span>
-                {isOverLimit && <span>({charCount - 280} over limit)</span>}
-              </span>
+              {isShortMode ? (
+                <span className={`text-xs font-mono px-2.5 py-1 rounded-full flex items-center gap-1 font-semibold ${
+                  isOverShortLimit 
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20' 
+                    : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
+                }`}>
+                  {isOverShortLimit ? <AlertTriangle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
+                  <span>{charCount} / 280 chars</span>
+                  {isOverShortLimit && <span>({charCount - 280} over limit)</span>}
+                </span>
+              ) : selectedLength === 'Long' ? (
+                <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 font-semibold">
+                  <Feather className="w-3 h-3 text-[#C29358]" />
+                  <span>{charCount} chars (~{wordCount} words) • X Premium Long-Form</span>
+                </span>
+              ) : (
+                <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 font-semibold">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span>{charCount} chars (~{wordCount} words) • Expanded Post</span>
+                </span>
+              )}
 
-              {isOverLimit && (
+              {isOverShortLimit && (
                 <button
                   type="button"
                   onClick={handleAutoTrimTo280}
@@ -316,7 +332,7 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
           {/* 3. Editable Post Content Box */}
           <div className="relative mt-4">
             <textarea
-              rows={5}
+              rows={selectedLength === 'Long' ? 12 : selectedLength === 'Medium' ? 7 : 4}
               value={activePostContent}
               onChange={(e) => handleTextChange(e.target.value)}
               className="w-full p-6 rounded-2xl bg-[#FAF7F2] dark:bg-[#171513] border border-[#E8DEC\-B] dark:border-[#2E2822] text-[#221D18] dark:text-[#FAF6F0] font-sans text-sm sm:text-base leading-relaxed whitespace-pre-wrap selection:bg-[#D4A373] focus:outline-none focus:border-[#C29358] focus:ring-1 focus:ring-[#C29358] resize-y"
