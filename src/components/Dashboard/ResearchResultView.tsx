@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { GroundedResearchResult, DraftPersonaVariant } from '../../types';
 import { storage } from '../../services/storage';
+import { GeminiStatusWidget } from './GeminiStatusWidget';
 
 interface ResearchResultViewProps {
   result: GroundedResearchResult;
@@ -259,6 +260,8 @@ export const ResearchResultView: React.FC<ResearchResultViewProps> = ({
                 Dynamic Runtime: {result.provider_metadata?.current_date || new Date().toDateString()}
               </span>
             </div>
+
+            <GeminiStatusWidget metadata={result.provider_metadata} />
 
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div className="bg-[#221D18] p-2.5 rounded-xl border border-[#332A20]">

@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import researchHandler from './api/research';
 import topicsHandler from './api/topics';
+import statusHandler from './api/status';
 
 // Local development server API middleware
 function apiServerPlugin() {
@@ -10,6 +11,22 @@ function apiServerPlugin() {
     name: 'api-server-middleware',
     configureServer(server: any) {
       server.middlewares.use(async (req: any, res: any, next: any) => {
+        if (req.url === '/api/status' && req.method === 'GET') {
+          try {
+            const fakeRequest = new Request('http://localhost:5173/api/status', { method: 'GET' });
+            const response = await statusHandler(fakeRequest);
+            const data = await response.json();
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = response.status;
+            res.end(JSON.stringify(data));
+          } catch (err: any) {
+            res.setHeader('Content-Type', 'application/json');
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, error: err.message || 'Server error' }));
+          }
+          return;
+        }
+
         if (req.url === '/api/research' && req.method === 'POST') {
           let body = '';
           req.on('data', (chunk: any) => { body += chunk; });

@@ -392,6 +392,7 @@ export function App() {
               onFindTodaysTopics={handleFindTodaysTopics}
               isLoading={isLoading}
               loadingMode={loadingMode}
+              metadata={activeResult?.provider_metadata}
             />
 
             {/* Live Progress Visualizer (When executing research) */}

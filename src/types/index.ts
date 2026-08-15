@@ -134,6 +134,13 @@ export interface ProviderMetadata {
   newest_source_date?: string;
   execution_time_ms: number;
   current_date: string;
+  gemini_quota?: {
+    is_available: boolean;
+    cooldown_seconds: number;
+    usage_percentage: number;
+    active_model: string;
+    status_message: string;
+  };
 }
 
 export interface GroundedResearchResult {

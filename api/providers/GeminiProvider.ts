@@ -1,6 +1,42 @@
 import { AIProvider, ProviderRequest, ProviderResponse, GroundedSourceItem } from './types';
 import { getEnvVar } from './envHelper';
 
+export interface GeminiQuotaTelemetry {
+  isAvailable: boolean;
+  cooldownSecondsRemaining: number;
+  cooldownUntilTimestamp: number;
+  usagePercentage: number;
+  activeModel: string;
+  statusMessage: string;
+}
+
+// In-memory global state for Gemini rate-limit & cooldown tracking
+let geminiCooldownUntil = 0;
+
+export function getGeminiQuotaTelemetry(): GeminiQuotaTelemetry {
+  const now = Date.now();
+  if (geminiCooldownUntil > now) {
+    const remaining = Math.max(0, Math.ceil((geminiCooldownUntil - now) / 1000));
+    return {
+      isAvailable: false,
+      cooldownSecondsRemaining: remaining,
+      cooldownUntilTimestamp: geminiCooldownUntil,
+      usagePercentage: Math.min(100, Math.max(20, Math.round((remaining / 60) * 100))),
+      activeModel: 'gemini-2.5-flash',
+      statusMessage: `Refilling in ${remaining}s (Using Live Online Fallback)`
+    };
+  }
+
+  return {
+    isAvailable: true,
+    cooldownSecondsRemaining: 0,
+    cooldownUntilTimestamp: 0,
+    usagePercentage: 0,
+    activeModel: 'gemini-2.5-flash',
+    statusMessage: 'Ready (Primary Grounded Engine)'
+  };
+}
+
 export class GeminiProvider implements AIProvider {
   readonly name = 'gemini' as const;
 
@@ -19,7 +55,16 @@ export class GeminiProvider implements AIProvider {
   }
 
   isAvailable(): boolean {
-    return this.getKeys().length > 0;
+    const keys = this.getKeys();
+    if (keys.length === 0) return false;
+    
+    // If cooldown is in effect, check if it has expired
+    const now = Date.now();
+    if (geminiCooldownUntil > now) {
+      return false; // Currently in cooldown, let Router use fallback immediately
+    }
+
+    return true;
   }
 
   async execute(req: ProviderRequest): Promise<ProviderResponse> {
@@ -31,7 +76,7 @@ export class GeminiProvider implements AIProvider {
     let lastError: any = null;
     const startTime = Date.now();
 
-    // Models to try with Google Search grounding
+    // Fast candidate models with native Google Search Grounding
     const modelsToTry = [
       'gemini-2.5-flash',
       'gemini-3.7-flash',
@@ -45,7 +90,7 @@ export class GeminiProvider implements AIProvider {
 
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          const timeoutId = setTimeout(() => controller.abort(), 3500);
 
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
           
@@ -85,6 +130,9 @@ export class GeminiProvider implements AIProvider {
               throw new Error('Gemini returned an empty response.');
             }
 
+            // Quota successful -> reset cooldown state
+            geminiCooldownUntil = 0;
+
             // Extract Google Search Grounding Metadata
             const groundingMetadata = candidate?.groundingMetadata || {};
             const searchQueries: string[] = Array.isArray(groundingMetadata.webSearchQueries) 
@@ -121,9 +169,16 @@ export class GeminiProvider implements AIProvider {
             const errData: any = await res.json().catch(() => ({}));
             const errMsg = errData.error?.message || 'Failure';
             lastError = new Error(`Gemini (${model}) failed: ${errMsg}`);
+
+            // Detect 429 quota exhaustion and calculate exact cooldown duration
             if (res.status === 429 || errMsg.includes('quota') || errMsg.includes('Quota')) {
               keyQuotaExceeded = true;
-              break; // Skip rest of models for this exhausted key immediately
+              
+              // Extract "Please retry in Xs" if provided by Google API
+              const retryMatch = errMsg.match(/retry in ([\d\.]+)s/i);
+              const retrySecs = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) + 2 : 45;
+              geminiCooldownUntil = Date.now() + (retrySecs * 1000);
+              break; // Skip other models for this exhausted key immediately
             }
           }
         } catch (err: any) {

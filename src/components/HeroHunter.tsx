@@ -19,8 +19,10 @@ import {
   LanguageType, 
   ToneType, 
   LengthType, 
-  HashtagOption 
+  HashtagOption,
+  ProviderMetadata
 } from '../types';
+import { GeminiStatusWidget } from './Dashboard/GeminiStatusWidget';
 
 interface HeroHunterProps {
   userName: string;
@@ -42,6 +44,7 @@ interface HeroHunterProps {
   onFindTodaysTopics: () => void;
   isLoading: boolean;
   loadingMode: 'create' | 'topics' | null;
+  metadata?: ProviderMetadata;
 }
 
 export const HeroHunter: React.FC<HeroHunterProps> = ({
@@ -64,6 +67,7 @@ export const HeroHunter: React.FC<HeroHunterProps> = ({
   onFindTodaysTopics,
   isLoading,
   loadingMode,
+  metadata,
 }) => {
   const [activeDropdown, setActiveDropdown] = useState<'content' | 'audience' | 'language' | 'tone' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -480,6 +484,9 @@ export const HeroHunter: React.FC<HeroHunterProps> = ({
         <span>•</span>
         <span>Zero Data Shared</span>
       </div>
+
+      {/* 7. Live Gemini Engine Quota & Refill Status Widget */}
+      <GeminiStatusWidget metadata={metadata} />
 
     </div>
   );

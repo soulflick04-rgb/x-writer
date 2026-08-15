@@ -4,6 +4,7 @@ import {
   ProviderMetadata, 
   GroundedSourceItem 
 } from './types';
+import { getGeminiQuotaTelemetry } from './GeminiProvider';
 
 export function normalizeProviderOutput(
   response: ProviderResponse,
@@ -55,6 +56,7 @@ export function normalizeProviderOutput(
   }
 
   const isFallbackUsed = providerChain.length > 1 || response.provider !== 'gemini';
+  const quotaTele = getGeminiQuotaTelemetry();
 
   const metadata: ProviderMetadata = {
     provider: response.provider,
@@ -66,7 +68,14 @@ export function normalizeProviderOutput(
     sources_count: allSources.length,
     newest_source_date: newestSourceDate,
     execution_time_ms: response.executionTimeMs,
-    current_date: currentDateStr
+    current_date: currentDateStr,
+    gemini_quota: {
+      is_available: quotaTele.isAvailable,
+      cooldown_seconds: quotaTele.cooldownSecondsRemaining,
+      usage_percentage: quotaTele.usagePercentage,
+      active_model: quotaTele.activeModel,
+      status_message: quotaTele.statusMessage
+    }
   };
 
   return {
