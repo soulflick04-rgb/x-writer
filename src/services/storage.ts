@@ -159,15 +159,17 @@ export const initialOpportunities: TopicOpportunity[] = [
 
 export const storage = {
   getSettings(): AppSettings {
-    const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    const rawEnv = (import.meta as any).env?.VITE_GEMINI_API_KEY || (import.meta as any).env?.GEMINI_API_KEY || '';
+    const envKey = String(rawEnv).trim().replace(/^["']|["']$/g, '');
     const raw = localStorage.getItem(STORAGE_KEYS.SETTINGS);
     if (!raw) return { ...defaultSettings, geminiApiKey: envKey };
     try {
       const parsed = JSON.parse(raw);
+      const storedKey = String(parsed.geminiApiKey || '').trim().replace(/^["']|["']$/g, '');
       return { 
         ...defaultSettings, 
         ...parsed, 
-        geminiApiKey: envKey || parsed.geminiApiKey || '' 
+        geminiApiKey: storedKey || envKey || '' 
       };
     } catch {
       return { ...defaultSettings, geminiApiKey: envKey };
@@ -175,7 +177,11 @@ export const storage = {
   },
 
   saveSettings(settings: AppSettings): void {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    const sanitized = {
+      ...settings,
+      geminiApiKey: String(settings.geminiApiKey || '').trim().replace(/^["']|["']$/g, '')
+    };
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(sanitized));
   },
 
   getStyleProfile(): StyleProfile {
