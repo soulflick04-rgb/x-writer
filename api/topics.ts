@@ -1,23 +1,63 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { runServerTopics } from './_shared/aiRunner';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
+  if (res && typeof res.setHeader === 'function') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  }
+
+  if (req.method === 'OPTIONS') {
+    if (res && typeof res.status === 'function') {
+      return res.status(200).end();
+    }
+    return new Response(null, { status: 200 });
+  }
+
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    if (res && typeof res.status === 'function') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {}
+    } else if (!body && typeof req.json === 'function') {
+      body = await req.json();
+    }
+
     const audience = body?.audience || 'Hollywood / Global Cinema';
     const language = body?.language || 'English';
-    
-    const opportunities = await runServerTopics(audience, language);
-    return res.status(200).json({ success: true, data: opportunities });
+
+    const result = await runServerTopics(audience, language);
+
+    if (res && typeof res.status === 'function') {
+      return res.status(200).json({ success: true, data: result });
+    }
+
+    return new Response(JSON.stringify({ success: true, data: result }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (err: any) {
-    console.error('Server topics error:', err);
-    return res.status(500).json({
-      success: false,
-      error: err.message || 'Internal server error scanning topics'
+    console.error('[API /api/topics Error]:', err);
+    const errorMessage = err?.message || 'Internal server error processing topics';
+
+    if (res && typeof res.status === 'function') {
+      return res.status(500).json({ success: false, error: errorMessage });
+    }
+
+    return new Response(JSON.stringify({ success: false, error: errorMessage }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
 }
