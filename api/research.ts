@@ -1,7 +1,12 @@
+import { ProviderRouter } from './providers/ProviderRouter.ts';
+import { ProviderRequest } from './providers/types.ts';
+
 // Vercel Edge Runtime - High Performance, Zero Cold Start
 export const config = {
   runtime: 'edge',
 };
+
+const router = new ProviderRouter();
 
 export default async function handler(req: Request) {
   // CORS Preflight
@@ -26,20 +31,14 @@ export default async function handler(req: Request) {
   try {
     const params: any = await req.json();
 
-    const allGeminiRaw = [
-      process.env.GEMINI_API_KEY,
-      process.env.VITE_GEMINI_API_KEY,
-      process.env.GEMINI_API_KEY_2,
-      process.env.VITE_GEMINI_API_KEY_2,
-    ].filter(Boolean).join(',');
-
-    const geminiKeys = allGeminiRaw
-      .split(',')
-      .map((k) => k.trim().replace(/^["']|["']$/g, ''))
-      .filter(Boolean);
-
-    const groqKey = (process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || '').trim().replace(/^["']|["']$/g, '');
-    const openRouterKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+    const now = new Date();
+    const currentDateStr = now.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const currentYear = now.getFullYear();
 
     const selectedLength = params.length || 'Medium';
 
@@ -76,194 +75,140 @@ export default async function handler(req: Request) {
 - CRITICAL REQUIREMENT: WRITE AN EXPANDED 2-3 PARAGRAPH POST WITH SUBSTANCE AND DEPTH.`;
     }
 
-    const systemPrompt = `You are Soulflick AI, an elite cinema essayist and film analyst for cinephiles and film industry insiders.
-Your writing is articulate, rich in film craft knowledge, and captivating.
+    const systemPrompt = `You are Soulflick AI, an elite cinema research analyst, film essayist, and content strategist for cinephiles and film industry insiders.
+You have access to Google Search grounding.
 
-WRITING PRINCIPLES:
-1. BAN CHEAP AI FILLER: Never use "Mind blown", "Let that sink in", "Masterpiece alert", "Game changer", "What do you think?", "Drop your thoughts below".
-2. CINEPHILE CRAFT & DETAIL: Focus on camera lenses, optical distortion, blocking geometry, sound mixing, lighting, box office math, and script architecture.
-3. ${lengthInstruction}
-4. 4 COMPLETE PERSONA DRAFTS (Each must be fully articulated, never a fragment):
-   - primary: High-impact analytical hook, verified mechanism, strong conclusion.
-   - smart: In-depth auteur craft analysis (lenses, lighting, editing, cinematography).
-   - spicy: Defensible contrarian re-evaluation that challenges common consensus with facts.
-   - emotional: Resonant human devotion to the craft or vulnerable actor/director lore.
+TEMPORAL CONTEXT & DYNAMIC RUNTIME:
+- Current Runtime Date: ${currentDateStr} (Year ${currentYear}).
+- The operational timeframe is ${currentYear} and future live web developments.
 
-PARAMETERS:
-- Content Type: ${params.contentType || 'Smart Film Analysis'}
-- Target Audience: ${params.audience || 'Hollywood / Global Cinema'}
-- Language: ${params.language || 'English'}
-- Tone: ${params.tone || 'Human / Conversational'}
-- Intensity: ${params.intensity || 6}/10
-- Selected Length Mode: ${selectedLength}
-${params.specificTopic ? `- Specific Film/Topic: "${params.specificTopic}"` : ''}
+UNIVERSAL CURRENT-INFO RULE:
+- IF THE USER'S TOPIC OR QUESTION DEPENDS ON INFORMATION THAT MAY HAVE CHANGED OR OCCURRED AFTER 2023: ALWAYS SEARCH THE LIVE WEB FIRST.
+- For current cinema questions, prioritize:
+  1. TODAY
+  2. LAST 24 HOURS
+  3. LAST 7 DAYS
+  4. OLDER INFORMATION ONLY WHEN NECESSARY.
+- Historical information remains available when asked for, but always verify recent developments (e.g. current status, recent interviews, sequel plans, casting changes, cancellations, controversies).
+- Do NOT rely on internal knowledge cutoff when newer information may exist on the live web.
+- Use current web sources to establish the latest known state of the subject (2024, 2025, 2026+).
+- Do NOT invent facts, dates, quotes, statistics, casting, release dates, box-office figures or public reactions.
+- When sources disagree, identify the disagreement instead of silently choosing one.
+- Prefer primary and reputable sources (official studio websites, official project announcements, official director/actor interviews, Variety, Deadline, The Hollywood Reporter, Entertainment Weekly, IGN, major trade reporting).
+
+THE 10-STEP SOULFLICK PIPELINE EXECUTION:
+1. Ground Truth Discovery: Extract verified real-world facts, dates, personnel, and recent quotes.
+2. Angle Extraction: Evaluate 6 distinct angles (News, Curiosity, Contrarian, Emotional Lore, Industry Math, Hidden Craft).
+3. Draft Synthesis with 4 RADICALLY DISTINCT PERSONAS (Strictly NO content repetition across drafts):
+
+   - "primary" (High-Impact Curiosity Hook):
+     Start with a surprising fact or overlooked angle. Explain the specific mechanism and its ripple effect on modern cinema. End with a sharp, memorable verdict.
+
+   - "smart" (Auteur & Technical Craft):
+     Focus 100% on cinematic craft mechanics: lenses, aspect ratios, lighting contrast, optical distortion, blocking geometry, sound mix, editing rhythms, or practical vs digital workflows.
+
+   - "spicy" (Defensible Contrarian Re-evaluation):
+     Challenge the mainstream consensus or standard fan narrative using verified data, box office realities, or historical patterns. Must be defensible, intelligent, and debate-provoking (never cheap clickbait).
+
+   - "emotional" (Human Devotion & BTS Lore):
+     Spotlight the human vulnerability, artistic risk, director/actor sacrifice, or emotional resonance of the story. Focus on the devotion to the craft.
+
+CRITICAL ANTI-REPETITION & VOICE RULES:
+- ZERO OVERLAP: Each draft must use a completely distinct hook, different vocabulary, separate examples, and unique conclusions. NEVER rewrite the same sentences.
+- BANNED CLICHÉS: Never use "Mind blown", "Let that sink in", "Masterpiece alert", "Game changer", "What do you think?", "Drop your thoughts below", "Only time will tell", "A testament to", "In the ever-evolving world of cinema", "Delve into", "Beacon of hope".
+- Write with high intellectual density, conversational confidence, and authentic cinephile appreciation.
+- ${lengthInstruction}
+- HASHTAGS: Recommend 0 to 2 relevant cinema hashtags maximum (e.g. #FilmX, #Cinema).
+- IMAGE RECOMMENDATION: Specific visual description, exact search terms, orientation, visual type, and 35mm diffusion prompt.
 
 RESPOND STRICTLY WITH THIS JSON FORMAT:
 \`\`\`json
 {
-  "research_timestamp": "${new Date().toISOString()}",
-  "selected_length": "${selectedLength}",
+  "research_timestamp": "${now.toISOString()}",
   "recommended_topic": {
     "title": "Specific Cinema Topic Headline",
-    "summary": "2-3 sentences explaining the discovery and why it matters to cinema fans.",
-    "why_now": "The specific 24h event or recent trigger",
+    "summary": "2-3 sentences explaining the grounded discovery and why it matters to cinema fans.",
+    "why_now": "The specific 24h event, recent quote, or current 2026 development",
     "opportunity_score": 93
   },
+  "topic_opportunities": [],
+  "angle_analysis": {
+    "news": "Latest trade verification & production update.",
+    "curiosity": "Overlooked detail in recent director disclosures.",
+    "controversial": "Defensible challenge to common critical consensus.",
+    "emotional": "The human craft devotion and artistic stakes.",
+    "industry": "Budget, distribution math, and streaming dynamics.",
+    "hidden_detail": "Technical craft decision that changes the entire meaning.",
+    "selected": "High-Impact Curiosity & Craft Revelation"
+  },
+  "research_summary": "Comprehensive summary of findings from live web research.",
+  "conversation_signals": [
+    {
+      "source": "Film Trades / Public Discussion",
+      "theme": "Core discussion theme",
+      "summary": "Observation on public reception"
+    }
+  ],
+  "verified_claims": [
+    {
+      "claim": "Verified factual detail about the film, production, or director",
+      "source": "Trade Publication / Official Source",
+      "confidence": "Verified (Official)"
+    }
+  ],
   "drafts": {
-    "primary": "Full complete primary post crafted specifically for ${selectedLength} mode",
-    "smart": "Full complete craft post crafted specifically for ${selectedLength} mode",
-    "spicy": "Full complete contrarian take crafted specifically for ${selectedLength} mode",
-    "emotional": "Full complete emotional story crafted specifically for ${selectedLength} mode"
+    "primary": "Full complete primary post crafted specifically for ${selectedLength} mode with curiosity hook and original insight",
+    "smart": "Full complete craft post crafted specifically for ${selectedLength} mode focusing purely on camera, lenses, and directing geometry",
+    "spicy": "Full complete contrarian take crafted specifically for ${selectedLength} mode with defensible fact-based counter-narrative",
+    "emotional": "Full complete emotional story crafted specifically for ${selectedLength} mode focusing on human stakes and creative devotion"
   },
   "recommended_hashtags": ["#FilmX", "#Cinema"],
   "image_recommendation": {
     "recommended": "Detailed description of a movie still or BTS photo",
     "search_keywords": ["keyword 1", "keyword 2"],
+    "visual_type": "Movie Still / BTS Photo",
+    "reason": "Why this visual stops feed scrolling",
     "orientation": "Landscape 16:9",
     "ai_prompt": "Cinematic 35mm film still prompt, photorealistic, authentic grain, anamorphic --ar 16:9"
   },
-  "verified_claims": [
+  "quality_check": {
+    "hook_strength": 9,
+    "originality": 9,
+    "evidence": 9,
+    "conversation_potential": 9,
+    "follower_conversion": 9,
+    "overall": 9
+  },
+  "sources": [
     {
-      "claim": "Verified factual detail about the film or director",
-      "source": "Trade Publication",
-      "confidence": "Verified (Official)"
+      "title": "Publication Name",
+      "url": "https://...",
+      "source_type": "Entertainment Publication",
+      "date": "2026",
+      "confidence_level": "Verified (Official)"
     }
   ]
 }
 \`\`\``;
 
-    let attempts = 0;
-    const maxAttempts = 3;
-    let lastError: any = null;
-    let finalResult: any = null;
+    const topicQuery = params.specificTopic?.trim();
+    const userPrompt = topicQuery
+      ? `Conduct live web research on the specific cinema topic: "${topicQuery}". Content Type: ${params.contentType || 'Smart Film Analysis'}, Audience: ${params.audience || 'Hollywood / Global Cinema'}, Language: ${params.language || 'English'}, Tone: ${params.tone || 'Human / Conversational'}, Length: ${selectedLength}. Research latest known status, verify claims, and produce 4 complete drafts in the specified JSON schema.`
+      : `Scan current cinema news and trade reporting for audience: "${params.audience || 'Hollywood / Global Cinema'}", Language: "${params.language || 'English'}". Content Type: ${params.contentType || 'Smart Film Analysis'}, Tone: ${params.tone || 'Human / Conversational'}, Length: ${selectedLength}. Find the single most captivating current cinema angle, verify facts, and produce 4 complete drafts in the specified JSON schema.`;
 
-    // 1. PRIMARY: Gemini with Google Search Grounding (4000 tokens & 16s timeout)
-    if (geminiKeys.length > 0 && attempts < maxAttempts) {
-      for (const gKey of geminiKeys) {
-        if (attempts >= maxAttempts) break;
-        attempts++;
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 16000);
+    const providerReq: ProviderRequest = {
+      systemPrompt,
+      userPrompt,
+      selectedLength,
+      params,
+      currentDateStr,
+      currentYear,
+    };
 
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${gKey}`;
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\nPerform cinema research and write the complete JSON drafts now for: ${params.contentType || 'Cinema'}.` }] }],
-              tools: [{ googleSearch: {} }],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 4000 }
-            }),
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
+    // Execute through 3-tier ProviderRouter (Gemini -> Groq -> OpenRouter)
+    const result = await router.executeResearch(providerReq);
 
-          if (res.ok) {
-            const data: any = await res.json();
-            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (rawText) {
-              finalResult = repairAndParseServerJson(rawText, selectedLength);
-              finalResult.provider_used = 'Gemini (Google Grounded)';
-              break;
-            }
-          } else {
-            const errData: any = await res.json().catch(() => ({}));
-            lastError = new Error(`Gemini Error (${res.status}): ${errData.error?.message || 'Rate/Service Limit'}`);
-          }
-        } catch (err: any) {
-          lastError = err;
-        }
-      }
-    }
-
-    // 2. FALLBACK 1: Groq API (Ultra-fast Llama 3.3 70B ~ 1.2s)
-    if (!finalResult && groqKey && attempts < maxAttempts) {
-      attempts++;
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${groqKey}`
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              { role: 'system', content: 'You are Soulflick AI. Output strictly valid JSON matching the requested cinema research schema with full complete post drafts.' },
-              { role: 'user', content: `${systemPrompt}\n\nExecute cinema analysis now in JSON format.` }
-            ],
-            temperature: 0.7,
-            response_format: { type: 'json_object' }
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const data: any = await res.json();
-          const rawText = data.choices?.[0]?.message?.content;
-          if (rawText) {
-            finalResult = repairAndParseServerJson(rawText, selectedLength);
-            finalResult.provider_used = 'Groq (Llama 3.3 70B)';
-          }
-        } else {
-          const errData: any = await res.json().catch(() => ({}));
-          lastError = new Error(`Groq Error (${res.status}): ${errData.error?.message || 'Failure'}`);
-        }
-      } catch (err: any) {
-        lastError = err;
-      }
-    }
-
-    // 3. FINAL FALLBACK: OpenRouter (Gemini 2.5 Flash Lite)
-    if (!finalResult && openRouterKey && attempts < maxAttempts) {
-      attempts++;
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openRouterKey}`
-          },
-          body: JSON.stringify({
-            model: 'google/gemini-2.5-flash-lite',
-            messages: [
-              { role: 'user', content: `${systemPrompt}\n\nExecute research now.` }
-            ],
-            temperature: 0.7
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const data: any = await res.json();
-          const rawText = data.choices?.[0]?.message?.content;
-          if (rawText) {
-            finalResult = repairAndParseServerJson(rawText, selectedLength);
-            finalResult.provider_used = 'OpenRouter';
-          }
-        } else {
-          const errData: any = await res.json().catch(() => ({}));
-          lastError = new Error(`OpenRouter Error (${res.status}): ${errData.error?.message || 'Failure'}`);
-        }
-      } catch (err: any) {
-        lastError = err;
-      }
-    }
-
-    if (!finalResult) {
-      throw lastError || new Error('All configured AI providers failed. Please check your API keys or wait 30 seconds.');
-    }
-
-    return new Response(JSON.stringify({ success: true, data: finalResult }), {
+    return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
@@ -271,131 +216,16 @@ RESPOND STRICTLY WITH THIS JSON FORMAT:
       },
     });
   } catch (err: any) {
-    console.error('Edge handler error:', err);
-    return new Response(JSON.stringify({ success: false, error: err.message || 'Internal error' }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
-  }
-}
-
-function repairAndParseServerJson(raw: string, selectedLength: string): any {
-  // 1. Direct JSON Parse attempt
-  let clean = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-  const firstBrace = clean.indexOf('{');
-  const lastBrace = clean.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace !== -1) {
-    clean = clean.substring(firstBrace, lastBrace + 1);
-  }
-
-  try {
-    const parsed = JSON.parse(clean);
-    if (parsed.drafts && parsed.drafts.primary) {
-      return sanitizeParsedResult(parsed, selectedLength);
-    }
-  } catch (e1) {
-    try {
-      const withoutTrailing = clean.replace(/,\s*([\}\]])/g, '$1');
-      const parsed = JSON.parse(withoutTrailing);
-      if (parsed.drafts && parsed.drafts.primary) {
-        return sanitizeParsedResult(parsed, selectedLength);
-      }
-    } catch (e2) {}
-  }
-
-  // 2. Robust Token-Block Extractor for Drafts
-  const extractBlock = (key: string, nextKeys: string[]): string => {
-    const keyPattern = new RegExp('"' + key + '"\\s*:\\s*"', 'i');
-    const match = raw.match(keyPattern);
-    if (!match || match.index === undefined) return '';
-    const startIdx = match.index + match[0].length;
-    
-    const nextKeyPatterns = nextKeys.map(k => '"' + k + '"\\s*:');
-    const lookaheadPattern = new RegExp('(?:' + nextKeyPatterns.join('|') + '|}\\s*,?\\s*"|}\\s*$)', 'i');
-    
-    const remaining = raw.substring(startIdx);
-    const nextMatch = remaining.match(lookaheadPattern);
-    
-    let val = nextMatch ? remaining.substring(0, nextMatch.index) : remaining;
-    val = val.trim().replace(/,\s*$/, '').replace(/"\s*,?\s*$/, '').trim();
-    return val.replace(/\\n/g, '\n').replace(/\\"/g, '"');
-  };
-
-  const title = extractBlock('title', ['summary', 'why_now', 'drafts', 'primary']) || 'Grounded Cinema Revelation';
-  const summary = extractBlock('summary', ['why_now', 'drafts', 'primary', 'smart']) || 'Recent developments in film craft and industry distribution.';
-  const whyNow = extractBlock('why_now', ['drafts', 'primary', 'smart', 'opportunity_score']) || 'Trending across film trades today.';
-
-  const primaryDraft = extractBlock('primary', ['smart', 'spicy', 'emotional', 'recommended_hashtags', 'image_recommendation']);
-  const smartDraft = extractBlock('smart', ['spicy', 'emotional', 'recommended_hashtags', 'image_recommendation']);
-  const spicyDraft = extractBlock('spicy', ['emotional', 'recommended_hashtags', 'image_recommendation']);
-  const emotionalDraft = extractBlock('emotional', ['recommended_hashtags', 'image_recommendation', 'verified_claims']);
-
-  const fallbackDraft = `${title}\n\n${summary}`;
-
-  return {
-    research_timestamp: new Date().toISOString(),
-    selected_length: selectedLength,
-    recommended_topic: {
-      title,
-      summary,
-      why_now: whyNow,
-      opportunity_score: 93
-    },
-    drafts: {
-      primary: primaryDraft || fallbackDraft,
-      smart: smartDraft || primaryDraft || fallbackDraft,
-      spicy: spicyDraft || primaryDraft || fallbackDraft,
-      emotional: emotionalDraft || primaryDraft || fallbackDraft
-    },
-    recommended_hashtags: ['#FilmX', '#Cinema'],
-    image_recommendation: {
-      recommended: extractBlock('recommended', ['search_keywords', 'orientation', 'ai_prompt']) || 'Cinematic movie still',
-      search_keywords: ['cinema', 'film craft'],
-      orientation: 'Landscape 16:9',
-      ai_prompt: extractBlock('ai_prompt', ['quality_check', 'sources']) || ''
-    },
-    verified_claims: [
+    console.error('API /api/research error:', err);
+    return new Response(
+      JSON.stringify({ success: false, error: err.message || 'Internal error processing research' }),
       {
-        claim: 'Verified cinema trade report.',
-        source: 'Industry Trade',
-        confidence: 'Verified (Official)'
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
       }
-    ]
-  };
-}
-
-function sanitizeParsedResult(parsed: any, selectedLength: string): any {
-  return {
-    research_timestamp: parsed.research_timestamp || new Date().toISOString(),
-    selected_length: parsed.selected_length || selectedLength,
-    recommended_topic: {
-      title: parsed.recommended_topic?.title || parsed.title || 'Cinema Topic Analysis',
-      summary: parsed.recommended_topic?.summary || parsed.summary || 'Grounded cinema analysis.',
-      why_now: parsed.recommended_topic?.why_now || 'Trending today.',
-      opportunity_score: parsed.recommended_topic?.opportunity_score || 92
-    },
-    drafts: {
-      primary: parsed.drafts?.primary || parsed.primary || 'Primary cinephile post.',
-      smart: parsed.drafts?.smart || parsed.smart || parsed.drafts?.primary || 'Smart craft analysis.',
-      spicy: parsed.drafts?.spicy || parsed.spicy || parsed.drafts?.primary || 'Contrarian perspective.',
-      emotional: parsed.drafts?.emotional || parsed.emotional || parsed.drafts?.primary || 'Human story.'
-    },
-    recommended_hashtags: Array.isArray(parsed.recommended_hashtags) ? parsed.recommended_hashtags : ['#FilmX', '#Cinema'],
-    image_recommendation: {
-      recommended: parsed.image_recommendation?.recommended || 'Cinematic movie still',
-      search_keywords: parsed.image_recommendation?.search_keywords || ['cinema', 'movie still'],
-      orientation: parsed.image_recommendation?.orientation || 'Landscape 16:9',
-      ai_prompt: parsed.image_recommendation?.ai_prompt || ''
-    },
-    verified_claims: Array.isArray(parsed.verified_claims) ? parsed.verified_claims : [
-      {
-        claim: 'Verified cinema trade report.',
-        source: 'Industry Trade',
-        confidence: 'Verified (Official)'
-      }
-    ]
-  };
+    );
+  }
 }

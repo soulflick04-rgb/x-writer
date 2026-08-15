@@ -1,3 +1,8 @@
+import { GeminiProvider } from './providers/GeminiProvider.ts';
+import { GroqProvider } from './providers/GroqProvider.ts';
+import { OpenRouterProvider } from './providers/OpenRouterProvider.ts';
+import { ProviderRequest } from './providers/types.ts';
+
 export const config = {
   runtime: 'edge',
 };
@@ -26,77 +31,84 @@ export default async function handler(req: Request) {
     const audience = body?.audience || 'Hollywood / Global Cinema';
     const language = body?.language || 'English';
 
-    const allGeminiRaw = [
-      process.env.GEMINI_API_KEY,
-      process.env.VITE_GEMINI_API_KEY,
-      process.env.GEMINI_API_KEY_2,
-      process.env.VITE_GEMINI_API_KEY_2,
-    ].filter(Boolean).join(',');
+    const now = new Date();
+    const currentDateStr = now.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const currentYear = now.getFullYear();
 
-    const geminiKeys = allGeminiRaw
-      .split(',')
-      .map((k) => k.trim().replace(/^["']|["']$/g, ''))
-      .filter(Boolean);
+    const systemPrompt = `You are Soulflick AI, a cinema research intelligence analyst.
+You have access to Google Search grounding.
 
-    const systemPrompt = `You are Soulflick AI. Search current cinema news from the last 24h for audience "${audience}" in language "${language}".
+TEMPORAL CONTEXT:
+- Today's Date: ${currentDateStr} (Year ${currentYear}).
+- Search current cinema news, trade announcements, casting news, box office, and director updates from the last 24-48 hours.
+
 Return strictly a valid JSON object matching:
+\`\`\`json
 {
   "opportunities": [
     {
       "id": "topic-1",
       "title": "Topic title",
       "summary": "Summary of what happened",
-      "why_now": "The specific 24h trigger",
+      "why_now": "The specific 24h trigger or current development",
       "opportunity_score": 92,
       "best_angle": "Standout contrarian or curiosity angle",
       "freshness": "Last 24 hours",
-      "saturation": "low | medium | high",
+      "saturation": "low",
       "discussion_potential": "very high",
       "suggested_content_type": "Smart Film Analysis",
       "sources": [{"title": "Publication", "url": "https://..."}]
     }
   ]
-}`;
+}
+\`\`\``;
 
-    if (geminiKeys.length > 0) {
-      for (const key of geminiKeys) {
-        try {
-          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ role: 'user', parts: [{ text: systemPrompt }] }],
-              tools: [{ googleSearch: {} }],
-              generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
-            })
+    const userPrompt = `Search live cinema news and radar for audience "${audience}" in language "${language}". Rank the top 6 current cinema opportunities.`;
+
+    const providerReq: ProviderRequest = {
+      systemPrompt,
+      userPrompt,
+      selectedLength: 'Medium',
+      params: { audience, language },
+      currentDateStr,
+      currentYear,
+    };
+
+    const providers = [
+      new GeminiProvider(),
+      new GroqProvider(),
+      new OpenRouterProvider()
+    ];
+
+    for (const provider of providers) {
+      if (!provider.isAvailable()) continue;
+      try {
+        const response = await provider.execute(providerReq);
+        const parsed = parseTopicsJson(response.rawText);
+        if (Array.isArray(parsed.opportunities) && parsed.opportunities.length > 0) {
+          return new Response(JSON.stringify({ success: true, data: parsed.opportunities }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
           });
-
-          if (res.ok) {
-            const data: any = await res.json();
-            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            const parsed = repairAndParseServerJson(rawText);
-            if (Array.isArray(parsed.opportunities)) {
-              return new Response(JSON.stringify({ success: true, data: parsed.opportunities }), {
-                status: 200,
-                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-              });
-            }
-          }
-        } catch (err) {
-          console.warn('Gemini topics error:', err);
         }
+      } catch (err) {
+        console.warn(`Topics provider ${provider.name} error:`, err);
       }
     }
 
-    // Default fallback catalog
+    // Fallback topic if all providers fail
     const fallback = [
       {
         id: 'topic-1',
         title: "Denis Villeneuve's Optical Approach for 'Dune: Messiah'",
         summary: "Employing custom vintage optics to depict prescient visions.",
         opportunity_score: 94,
-        why_now: "Recent director masterclass quotes",
+        why_now: "Recent director masterclass disclosures",
         best_angle: "How lens choice conveys psychological dread.",
         freshness: "Last 24 hours",
         saturation: "low",
@@ -117,7 +129,7 @@ Return strictly a valid JSON object matching:
   }
 }
 
-function repairAndParseServerJson(raw: string): any {
+function parseTopicsJson(raw: string): any {
   let clean = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
   const firstBrace = clean.indexOf('{');
   const lastBrace = clean.lastIndexOf('}');

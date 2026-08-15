@@ -123,6 +123,18 @@ export interface QualityCheck {
   overall: number;
 }
 
+export interface ProviderMetadata {
+  provider: 'gemini' | 'groq' | 'openrouter';
+  fallback_used: boolean;
+  provider_chain: string[];
+  live_web_grounding: boolean;
+  search_queries: string[];
+  sources_count: number;
+  newest_source_date?: string;
+  execution_time_ms: number;
+  current_date: string;
+}
+
 export interface GroundedResearchResult {
   id?: string;
   research_timestamp: string;
@@ -148,7 +160,8 @@ export interface GroundedResearchResult {
   quality_check: QualityCheck;
   sources: GroundedSource[];
   
-  // Execution metadata
+  // Execution metadata & Provider Telemetry
+  provider_metadata?: ProviderMetadata;
   execution_time_ms?: number;
   cached?: boolean;
   provider_used?: string;
