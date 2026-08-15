@@ -246,8 +246,6 @@ function parseRawModelOutput(raw: string, _selectedLength?: string): any {
   const spicyDraft = extractBlock('spicy', ['emotional', 'recommended_hashtags', 'image_recommendation']);
   const emotionalDraft = extractBlock('emotional', ['recommended_hashtags', 'image_recommendation', 'verified_claims']);
 
-  const fallbackDraft = `${title}\n\n${summary}`;
-
   return {
     research_timestamp: new Date().toISOString(),
     recommended_topic: {
