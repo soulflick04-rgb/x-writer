@@ -19,13 +19,20 @@ export interface ServerResearchParams {
 }
 
 export async function runServerResearch(params: ServerResearchParams) {
-  const geminiKeys = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '')
+  const allGeminiRaw = [
+    process.env.GEMINI_API_KEY,
+    process.env.VITE_GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.VITE_GEMINI_API_KEY_2
+  ].filter(Boolean).join(',');
+
+  const geminiKeys = allGeminiRaw
     .split(',')
     .map(k => k.trim().replace(/^["']|["']$/g, ''))
     .filter(Boolean);
   
-  const groqKey = (process.env.GROQ_API_KEY || '').trim().replace(/^["']|["']$/g, '');
-  const openRouterKey = (process.env.OPENROUTER_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+  const groqKey = (process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+  const openRouterKey = (process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || '').trim().replace(/^["']|["']$/g, '');
 
   const systemPrompt = `You are Soulflick AI, elite cinema analyst & X writer.
 Research current cinema news from the last 24h (up to 7d) and write an original, high-engagement X post with 4 persona variants (primary, smart, spicy, emotional).
@@ -215,7 +222,14 @@ RESPOND STRICTLY WITH A SINGLE JSON OBJECT (inside \`\`\`json markdown block):
 }
 
 export async function runServerTopics(audience: string, language: string) {
-  const geminiKeys = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '')
+  const allGeminiRaw = [
+    process.env.GEMINI_API_KEY,
+    process.env.VITE_GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.VITE_GEMINI_API_KEY_2
+  ].filter(Boolean).join(',');
+
+  const geminiKeys = allGeminiRaw
     .split(',')
     .map(k => k.trim().replace(/^["']|["']$/g, ''))
     .filter(Boolean);
