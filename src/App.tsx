@@ -42,6 +42,7 @@ import confetti from 'canvas-confetti';
 export function App() {
   // Navigation & Modals
   const [currentView, setCurrentView] = useState<ViewMode>('dashboard');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [isDark, setIsDark] = useState<boolean>(() => {
     return localStorage.getItem('soulflick_theme') === 'dark';
@@ -327,25 +328,28 @@ export function App() {
         </div>
       )}
 
-      {/* 1. Fixed Left Sidebar */}
+      {/* 1. Sidebar (Desktop fixed, Mobile off-canvas drawer) */}
       <Sidebar
         currentView={currentView}
         onSelectView={setCurrentView}
         settings={settings}
         onOpenSettings={() => setSettingsModalOpen(true)}
+        isOpenMobile={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
       />
 
-      {/* 2. Top Header Controls (Theme toggle & Avatar) */}
+      {/* 2. Top Header Controls (Theme toggle, Mobile menu button & Avatar) */}
       <TopHeader
         settings={settings}
         onOpenSettings={() => setSettingsModalOpen(true)}
         isDark={isDark}
         onToggleTheme={toggleTheme}
         isLiveConfigured={geminiService.isLiveConfigured()}
+        onOpenMobileMenu={() => setMobileNavOpen(true)}
       />
 
-      {/* 3. Main Center Content Canvas */}
-      <main className="flex-1 min-h-screen pl-64 flex flex-col justify-start items-center relative z-10 px-4 sm:px-8 py-8">
+      {/* 3. Main Center Content Canvas (Responsive full-width on mobile, md:pl-64 on desktop) */}
+      <main className="flex-1 min-h-screen md:pl-64 flex flex-col justify-start items-center relative z-10 px-3 sm:px-6 lg:px-8 py-6 pt-16 md:pt-8 w-full overflow-x-hidden">
         
         {/* Error Notice */}
         {errorMessage && (
